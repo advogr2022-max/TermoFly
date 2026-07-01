@@ -112,37 +112,8 @@
 .end method
 
 .method public static a()V
-    .locals 5
+    .locals 0
 
-    sget-boolean v0, Lb/l;->d:Z
-
-    if-nez v0, :cond_0
-
-    invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
-
-    move-result-wide v0
-
-    sget-wide v2, Lb/l;->c:J
-
-    sub-long/2addr v0, v2
-
-    const-wide/32 v2, 0x5265c00
-
-    cmp-long v4, v0, v2
-
-    if-lez v4, :cond_0
-
-    new-instance v0, Lb/l;
-
-    invoke-direct {v0}, Lb/l;-><init>()V
-
-    const/4 v1, 0x0
-
-    new-array v1, v1, [Ljava/lang/Void;
-
-    invoke-virtual {v0, v1}, Lb/l;->execute([Ljava/lang/Object;)Landroid/os/AsyncTask;
-
-    :cond_0
     return-void
 .end method
 

@@ -26,53 +26,7 @@
 
 # direct methods
 .method public static a(Landroid/app/Activity;)V
-    .locals 2
-
-    new-instance v0, Landroid/app/AlertDialog$Builder;
-
-    invoke-direct {v0, p0}, Landroid/app/AlertDialog$Builder;-><init>(Landroid/content/Context;)V
-
-    const v1, 0x1080027
-
-    invoke-virtual {v0, v1}, Landroid/app/AlertDialog$Builder;->setIcon(I)Landroid/app/AlertDialog$Builder;
-
-    move-result-object v0
-
-    const v1, 0x7f0c002d
-
-    invoke-virtual {v0, v1}, Landroid/app/AlertDialog$Builder;->setTitle(I)Landroid/app/AlertDialog$Builder;
-
-    move-result-object v0
-
-    const-string v1, "Since version 3.01 TermoFly is available on Google Play Store. Please uninstall this version and install the latest release from Play Store"
-
-    invoke-virtual {v0, v1}, Landroid/app/AlertDialog$Builder;->setMessage(Ljava/lang/CharSequence;)Landroid/app/AlertDialog$Builder;
-
-    move-result-object v0
-
-    new-instance v1, Lb/j$1;
-
-    invoke-direct {v1, p0}, Lb/j$1;-><init>(Landroid/app/Activity;)V
-
-    const p0, 0x7f0c0160
-
-    invoke-virtual {v0, p0, v1}, Landroid/app/AlertDialog$Builder;->setPositiveButton(ILandroid/content/DialogInterface$OnClickListener;)Landroid/app/AlertDialog$Builder;
-
-    move-result-object p0
-
-    const v0, 0x7f0c00e6
-
-    const/4 v1, 0x0
-
-    invoke-virtual {p0, v0, v1}, Landroid/app/AlertDialog$Builder;->setNegativeButton(ILandroid/content/DialogInterface$OnClickListener;)Landroid/app/AlertDialog$Builder;
-
-    move-result-object p0
-
-    invoke-virtual {p0}, Landroid/app/AlertDialog$Builder;->create()Landroid/app/AlertDialog;
-
-    move-result-object p0
-
-    invoke-static {p0}, Lcom/xcglobe/xclog/App;->a(Landroid/app/Dialog;)V
+    .locals 0
 
     return-void
 .end method

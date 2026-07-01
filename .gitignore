@@ -6,24 +6,25 @@ build/
 
 # Tools (external)
 jdk/
+jdk17.zip
 android-sdk/
 jadx/
+jadx_out/
+jadx.zip
+apktool
 apktool.jar
 apktool_*
+cmdline-tools.zip
 
 # Temp / logs
 logs/
 tmp/
+*.igc
 
-# Android Studio / IDE
-.idea/
-*.iml
-.gradle/
-local.properties
-
-# OS
-*.swp
-*.swo
-*~
-.DS_Store
-Thumbs.db
+# Other generated / unwanted
+decoded_manifest/
+input/
+install_sdk.bat
+plan.md
+test_*.txt
+test_*.igc
