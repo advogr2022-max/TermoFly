@@ -1,0 +1,29 @@
+# Build output
+build/
+*.apk
+*.idsig
+*.keystore
+
+# Tools (external)
+jdk/
+android-sdk/
+jadx/
+apktool.jar
+apktool_*
+
+# Temp / logs
+logs/
+tmp/
+
+# Android Studio / IDE
+.idea/
+*.iml
+.gradle/
+local.properties
+
+# OS
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
