@@ -172,10 +172,16 @@
 
     if-nez v0, :cond_2
 
+    # If blipDebug is ON, force-register sensors (for debug on ground)
+    sget-boolean v0, Lcom/xcglobe/xclog/l;->blipDebug:Z
+
+    if-eqz v0, :continue_reg
+
     sget-boolean v0, Lm/g;->L:Z
 
     if-nez v0, :cond_2
 
+    :continue_reg
     invoke-static {}, Lcom/xcglobe/xclog/App;->b()Lcom/xcglobe/xclog/App;
 
     move-result-object v0

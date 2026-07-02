@@ -183,7 +183,7 @@
 .field public static blipLifeMs:J = 8000L
 .field public static blipStatus:I = 0
 .field public static blipEnabled:Z = true
-.field public static blipDebug:Z = false
+.field public static blipDebug:Z = true
 
 # direct methods
 .method static constructor <clinit>()V
