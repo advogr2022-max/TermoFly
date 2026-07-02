@@ -21,7 +21,7 @@
 
 .field private static i:F = 0.0f
 
-.field private static j:F = -3.0f
+.field private static j:F = -2.0f
 
 .field private static k:Lg/e;
 
@@ -207,13 +207,51 @@
 
     move-result v0
 
-    if-nez v0, :cond_6
+    if-nez v0, :check_sim1
+
+    goto :continue_var
+
+    :check_sim1
+
+    invoke-static {}, Lc/a;->a()Z
+
+    move-result v0
+
+    if-eqz v0, :cond_6
+
+    :continue_var
 
     invoke-direct {p0}, Lb/c;->b()V
 
     sget v0, Lb/c;->g:F
 
-    const v1, 0x3dcccccd    # 0.1f
+    invoke-static {}, Lc/a;->a()Z
+
+    move-result v9
+
+    if-nez v9, :check_orig
+
+    sget-boolean v9, Lm/g;->z:Z
+
+    if-eqz v9, :cond_5
+
+    :check_orig
+
+    invoke-static {}, Lcom/xcglobe/xclog/App;->f()Z
+
+    move-result v9
+
+    if-eqz v9, :check_done
+
+    invoke-static {}, Lm/f;->d()Z
+
+    move-result v9
+
+    if-eqz v9, :check_done
+
+    :check_done
+
+    const v1, 0xbe4ccccd    # -0.2f
 
     const/high16 v2, 0x3f800000    # 1.0f
 
@@ -227,7 +265,7 @@
 
     sget v1, Lb/c;->g:F
 
-    const/high16 v4, 0x40000000    # 2.0f
+    const/high16 v4, 0x3fa00000    # 1.25f
 
     cmpg-float v1, v1, v4
 
@@ -306,7 +344,7 @@
     sput v4, Lb/c;->i:F
 
     :cond_1
-    const/high16 v1, 0x43af0000    # 350.0f
+    const/high16 v1, 0x43d00000    # 416.0f
 
     cmpl-float v1, v0, v1
 
