@@ -19,6 +19,8 @@
     <string name="play_speed_desc">Simulation playback speed multiplier</string>
     <string name="enable_blip">Enable blip</string>
     <string name="enable_blip_desc">Sound signal when thermal detected</string>
+    <string name="blip_debug">Debug infobox</string>
+    <string name="blip_debug_desc">Show Tradar debug data on compass</string>
     <string name="ar_car">Car driving</string>
     <string name="ar_default">Default</string>
     <string name="ar_device_default">Device default</string>
