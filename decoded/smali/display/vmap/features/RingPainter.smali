@@ -573,9 +573,10 @@
     :df_min_skip
     const v2, 0x3f666666     # 0.9
 
-    cmpl-float v3, v1, v2            # cmpl: -1 if dist>0.9
-    if-gtz v3, :df_max_skip          # dist < 0.9 → skip
-    move v1, v2                      # clamp to 0.9
+    cmpg-float v3, v1, v2
+
+    if-lez v3, :df_max_skip          # v1 <= 0.9 → skip clamp
+    move v1, v2                      # v1 > 0.9 → clamp down to 0.9
     :df_max_skip
     # sin(angle_rad), cos(angle_rad)
     move v8, v0                     # save angle_rad in v8
@@ -669,9 +670,10 @@
     :a_min_skip
     const/high16 v0, 0x435c0000     # 220.0
 
-    cmpl-float v1, v12, v0           # cmpl: -1 if alpha > 220
-    if-gtz v1, :a_max_ok_skip        # alpha < 220 → skip
-    move v12, v0                     # alpha = 220
+    cmpg-float v1, v12, v0
+
+    if-lez v1, :a_max_ok_skip       # alpha <= 220 → skip clamp
+    move v12, v0                     # alpha > 220 → clamp down to 220
     :a_max_ok_skip
     float-to-int v12, v12
 
@@ -682,7 +684,7 @@
 
     sget-object v0, Ldisplay/vmap/features/RingPainter;->paintCircles:Landroid/graphics/Paint;
 
-    const v1, -16193                 # 0xFFFFC107 = (255,193,7)
+    const v1, 0xffffc107             # ARGB(255, 255, 193, 7) — янтарный
 
     invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setColor(I)V
 

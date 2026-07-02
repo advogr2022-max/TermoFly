@@ -25,16 +25,6 @@
 .field public static accelLpY:F = 0f
 .field public static smoothEnergy:F = 0f
 
-# SignalProcessor biquad states (float[4] arrays)
-.field public static hpXState:[F
-.field public static lpXState:[F
-.field public static hpYState:[F
-.field public static lpYState:[F
-
-# RMS buffers (float[64])
-.field public static rmsBufX:[F
-.field public static rmsBufY:[F
-
 # SignalProcessor scalar state
 .field public static rmsIdx:I = 0
 .field public static rmsFill:I = 0
@@ -87,35 +77,11 @@
 
     sput-object v0, Lm/a;->e:Lg/a;
 
-    # init biquad state arrays [4]
-    const/4 v0, 0x4
-
-    new-array v1, v0, [F
-    sput-object v1, Lm/a;->hpXState:[F
-
-    new-array v1, v0, [F
-    sput-object v1, Lm/a;->lpXState:[F
-
-    new-array v1, v0, [F
-    sput-object v1, Lm/a;->hpYState:[F
-
-    new-array v1, v0, [F
-    sput-object v1, Lm/a;->lpYState:[F
-
-    # init RMS buffers [64]
-    const/16 v0, 0x40
-
-    new-array v1, v0, [F
-    sput-object v1, Lm/a;->rmsBufX:[F
-
-    new-array v0, v0, [F
-    sput-object v0, Lm/a;->rmsBufY:[F
-
     # reset detection
     invoke-static {}, Lm/a;->h()V
 
     # init ZC timer
-    invoke-static {}, Ljava/lang/System;->elapsedRealtime()J
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
 
     move-result-wide v0
 
@@ -155,7 +121,7 @@
 .end method
 
 .method public static b()V
-    .locals 6
+    .locals 7
 
     sget-boolean v0, Lcom/xcglobe/xclog/l;->R:Z
 
@@ -182,6 +148,15 @@
     goto :goto_0
 
     :goto_1
+    # If NOT in flight mode → release listeners
+    sget-boolean v0, Lcom/xcglobe/xclog/l;->I:Z
+
+    if-nez v0, :try_register
+    invoke-static {}, Lm/a;->e()V
+
+    goto :goto_2
+
+    :try_register
     sget-boolean v0, Lm/a;->c:Z
 
     if-eqz v0, :cond_2
@@ -189,10 +164,6 @@
     sget-object v0, Lm/a;->d:Lm/a$a;
 
     if-nez v0, :cond_2
-
-    sget-boolean v0, Lcom/xcglobe/xclog/l;->I:Z
-
-    if-eqz v0, :cond_2
 
     sget-boolean v0, Lm/g;->L:Z
 
@@ -232,12 +203,26 @@
 
     invoke-virtual {v0, v2, v1, v3}, Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;I)Z
 
+    move-result v4
+
+    # Save SensorManager reference before v0 could be reused
+    move-object v5, v0
+
+    if-nez v4, :accel_register        # pressure registered → proceed to accel
+    # Pressure NOT registered → cleanup
+    const/4 v0, 0x0
+
+    sput-object v0, Lm/a;->d:Lm/a$a;
+
+    goto :goto_2
+
+    :accel_register
     # Register LINEAR_ACCELERATION (type 10, SENSOR_DELAY_GAME = 1)
     sget-object v2, Lm/a;->d:Lm/a$a;
 
     const/16 v3, 0xa
 
-    invoke-virtual {v0, v3}, Landroid/hardware/SensorManager;->getDefaultSensor(I)Landroid/hardware/Sensor;
+    invoke-virtual {v5, v3}, Landroid/hardware/SensorManager;->getDefaultSensor(I)Landroid/hardware/Sensor;
 
     move-result-object v3
 
@@ -245,7 +230,7 @@
 
     const/4 v4, 0x1
 
-    invoke-virtual {v0, v2, v3, v4}, Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;I)Z
+    invoke-virtual {v5, v2, v3, v4}, Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;I)Z
 
     :cond_1
     # If pressure sensor failed to register, clear d
@@ -412,7 +397,7 @@
 
     sput v0, Lm/a;->zcCount:I
 
-    invoke-static {}, Ljava/lang/System;->elapsedRealtime()J
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
 
     move-result-wide v1
 

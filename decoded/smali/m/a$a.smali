@@ -34,12 +34,12 @@
 .end method
 
 .method public onSensorChanged(Landroid/hardware/SensorEvent;)V
-    .locals 13
+    .locals 16
     .annotation build Landroid/annotation/TargetApi;
         value = 0x9
     .end annotation
 
-    move-object v1, p1                # save SensorEvent to local register
+    move-object/from16 v1, p1                # save SensorEvent to local register
 
     iget-object v0, v1, Landroid/hardware/SensorEvent;->sensor:Landroid/hardware/Sensor;
 
@@ -62,16 +62,16 @@
 
     invoke-static {}, Lc/a;->a()Z
 
-    move-result v1
+    move-result v7                    # use v7 for c.a() result, preserve v1 (SensorEvent)
 
-    if-nez v1, :baro_skip               # if GpsPlayer IS active → skip (original: if-nez)
+    if-eqz v7, :baro_process          # if sim NOT active → process real pressure
 
-    return-void
+    return-void                       # sim active → skip (original behavior)
 
-    :baro_skip
-    const/4 v1, 0x1
+    :baro_process
+    const/4 v8, 0x1
 
-    invoke-static {v1}, Lm/a;->a(Z)Z
+    invoke-static {v8}, Lm/a;->a(Z)Z
 
     invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
 
@@ -172,15 +172,13 @@
     # ========================================
     sget v3, Lm/a;->prevBpX:F
 
-    cmpg-float v6, v4, v6               # 0.0 (we use v6=0 from earlier but it's now overwritten)
-    # Hmm, v6 was overwritten. Let me use a clean zero
     const/4 v6, 0x0
-    cmpg-float v7, v3, v6               # prevBpX < 0 ?
+    cmpg-float v7, v3, v6               # prevBpX < 0?
     # Actually zero-crossing in Tradar:
     # if prevBpX >= 0 && bpOutX < 0 → zc++
     # Check prevBpX >= 0
     cmpg-float v7, v3, v6               # prevBpX < 0? (v7 < 0 if prevBpX < 0)
-    if-ltz v7, :zc_x                    # prevBpX >= 0 → check bpX < 0
+    if-gez v7, :zc_x                    # prevBpX >= 0 → check bpX < 0
     goto :zc_y_update
 
     :zc_x
