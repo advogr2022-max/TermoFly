@@ -295,7 +295,7 @@
 
     if-nez v5, :cond_3
 
-    const-wide/16 v2, 0x2
+    const-wide/16 v2, 0x96    # 150 (5x speed)
 
     mul-long v0, v0, v2
 
