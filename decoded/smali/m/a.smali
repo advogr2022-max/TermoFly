@@ -157,6 +157,13 @@
     goto :goto_2
 
     :try_register
+    # Early return if already running
+    sget-boolean v0, Lm/a;->b:Z
+
+    if-nez v0, :check_sensors
+    return-void
+
+    :check_sensors
     sget-boolean v0, Lm/a;->c:Z
 
     if-eqz v0, :cond_2
@@ -217,6 +224,11 @@
     goto :goto_2
 
     :accel_register
+    # Pressure registered → mark as started
+    const/4 v0, 0x1
+
+    sput-boolean v0, Lm/a;->b:Z
+
     # Register LINEAR_ACCELERATION (type 10, SENSOR_DELAY_GAME = 1)
     sget-object v2, Lm/a;->d:Lm/a$a;
 
@@ -233,16 +245,8 @@
     invoke-virtual {v5, v2, v3, v4}, Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;I)Z
 
     :cond_1
-    # If pressure sensor failed to register, clear d
-    sget-object v0, Lm/a;->d:Lm/a$a;
-
-    if-nez v0, :cond_2
-
-    const/4 v0, 0x0
-
-    sput-object v0, Lm/a;->d:Lm/a$a;
-
-    goto :goto_2
+    # Accel registration done (or skipped) — pressure listener stays active
+    goto :cond_2
 
     :cond_2
     :goto_2

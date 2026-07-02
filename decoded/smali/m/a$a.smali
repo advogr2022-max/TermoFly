@@ -173,12 +173,12 @@
     sget v3, Lm/a;->prevBpX:F
 
     const/4 v6, 0x0
-    cmpg-float v7, v3, v6               # prevBpX < 0?
+
     # Actually zero-crossing in Tradar:
     # if prevBpX >= 0 && bpOutX < 0 → zc++
     # Check prevBpX >= 0
     cmpg-float v7, v3, v6               # prevBpX < 0? (v7 < 0 if prevBpX < 0)
-    if-gez v7, :zc_x                    # prevBpX >= 0 → check bpX < 0
+    if-gez v7, :zc_x
     goto :zc_y_update
 
     :zc_x
@@ -365,6 +365,17 @@
     :nf_min_ok
     sput v11, Lm/a;->noiseFloor:F
 
+    # Clamp noiseFloor <= 0.5 (защита от ухода вверх)
+    const/high16 v13, 0x3f000000        # 0.5
+
+    cmpg-float v14, v11, v13
+
+    if-ltz v14, :nf_top_ok
+    move v11, v13
+
+    :nf_top_ok
+    sput v11, Lm/a;->noiseFloor:F
+
     :track_skip
 
     # ========================================
@@ -384,6 +395,16 @@
     :nf_nonzero
     div-float v11, v7, v10              # v11 = snr
 
+    # Защита от NaN/Inf
+    const/high16 v12, 0x7f800000        # +Inf
+
+    cmpg-float v13, v11, v12            # snr vs +Inf
+
+    if-ltz v13, :snr_finite             # snr < +Inf → ok
+    # snr == +Inf или NaN → обнулить
+    const/4 v11, 0x0
+
+    :snr_finite
     sput v11, Lm/a;->snrFiltered:F
 
     const/high16 v12, 0x40400000        # 3.0
@@ -562,9 +583,9 @@
 
     move-result-wide v0
 
-    const-wide v2, 0x404ca5dc1a63c1f8L   # 57.29578
+    const-wide v4, 0x404ca5dc1a63c1f8L   # 57.29578 → v4:v5 (НЕ затирает v2:v3)
 
-    mul-double v0, v0, v2
+    mul-double v0, v0, v4
 
     double-to-float v6, v0              # v6 = angle in degrees
 
@@ -611,7 +632,6 @@
 
     sub-float v8, v6, v7
 
-    cmpg-float v9, v8, v9               # 0
     # Check: |diff| > 180 → diff = 360 - |diff|
     invoke-static {v8}, Ljava/lang/Math;->abs(F)F
 
@@ -810,19 +830,21 @@
     sput v7, Lm/a;->consecReject:I
 
     # Reset
-    const/4 v7, 0x0
+    const/4 v8, 0x0                       # используем v8 (свободен в этой ветке)
 
-    sput v7, Lm/a;->confirmCount:I
+    sput v8, Lm/a;->confirmCount:I
 
-    sput-boolean v7, Lm/a;->dirReady:Z
+    sput-boolean v8, Lm/a;->dirReady:Z
 
-    sput v7, Lm/a;->aboveThresh:I
+    sput v8, Lm/a;->aboveThresh:I
+
+    sput v8, Lm/a;->detStatus:I
 
     const/high16 v7, -0x40800000
 
     sput v7, Lcom/xcglobe/xclog/l;->blipAngle:F
 
-    sput v6, Lcom/xcglobe/xclog/l;->blipStatus:I
+    sput v8, Lcom/xcglobe/xclog/l;->blipStatus:I
 
     return-void
 
