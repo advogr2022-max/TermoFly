@@ -17,6 +17,10 @@
 
 .field private static paintCircles:Landroid/graphics/Paint;
 
+.field private static paintDebug:Landroid/graphics/Paint;
+
+.field private static paintDebugBg:Landroid/graphics/Paint;
+
 .field private static ringBorder:F
 
 .field private static ringCenterX:I
@@ -61,6 +65,34 @@
     invoke-direct {v0}, Landroid/graphics/Paint;-><init>()V
 
     sput-object v0, Ldisplay/vmap/features/RingPainter;->paintBold:Landroid/graphics/Paint;
+
+    # init paintDebug (green monospace 15px, LEFT align)
+    new-instance v0, Landroid/graphics/Paint;
+    invoke-direct {v0}, Landroid/graphics/Paint;-><init>()V
+    sput-object v0, Ldisplay/vmap/features/RingPainter;->paintDebug:Landroid/graphics/Paint;
+
+    new-instance v0, Landroid/graphics/Paint;
+    invoke-direct {v0}, Landroid/graphics/Paint;-><init>()V
+    sput-object v0, Ldisplay/vmap/features/RingPainter;->paintDebugBg:Landroid/graphics/Paint;
+
+    sget-object v0, Ldisplay/vmap/features/RingPainter;->paintDebug:Landroid/graphics/Paint;
+    const/4 v1, 0x1
+    invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setAntiAlias(Z)V
+    sget-object v2, Landroid/graphics/Paint$Style;->FILL:Landroid/graphics/Paint$Style;
+    invoke-virtual {v0, v2}, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V
+    const v2, -16711936
+    invoke-virtual {v0, v2}, Landroid/graphics/Paint;->setColor(I)V
+    const/high16 v2, 0x41700000        # 15.0f
+    invoke-virtual {v0, v2}, Landroid/graphics/Paint;->setTextSize(F)V
+    sget-object v2, Landroid/graphics/Paint$Align;->LEFT:Landroid/graphics/Paint$Align;
+    invoke-virtual {v0, v2}, Landroid/graphics/Paint;->setTextAlign(Landroid/graphics/Paint$Align;)V
+
+    # init paintDebugBg (semi-transparent black)
+    sget-object v0, Ldisplay/vmap/features/RingPainter;->paintDebugBg:Landroid/graphics/Paint;
+    sget-object v2, Landroid/graphics/Paint$Style;->FILL:Landroid/graphics/Paint$Style;
+    invoke-virtual {v0, v2}, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V
+    const v2, 0xb4000000
+    invoke-virtual {v0, v2}, Landroid/graphics/Paint;->setColor(I)V
 
     iget-object p0, p0, Ldisplay/vmap/ViewVmp;->world:Lvmaps/core/VmpWorld;
 
@@ -297,7 +329,7 @@
 .end method
 
 .method public static drawRing(Landroid/graphics/Canvas;)V
-    .locals 9
+    .locals 12
 
     sget v0, Ldisplay/vmap/features/RingPainter;->ringCenterX:I
 
@@ -501,121 +533,147 @@
 
     invoke-static {p0}, Ldisplay/vmap/features/RingPainter;->drawBlips(Landroid/graphics/Canvas;)V
 
-    # === DEBUG INFOBOX (center of compass, 20px like Tradar) ===
+    # === DEBUG INFOBOX (4 lines, top-left of compass) ===
     sget-boolean v0, Lcom/xcglobe/xclog/l;->blipDebug:Z
-    if-nez v0, :dbg_end
+    if-eqz v0, :dbg_end
 
-    # Paint setup (v0 = paint handle, v1 = saved paint ref)
-    sget-object v0, Ldisplay/vmap/features/RingPainter;->paintCircles:Landroid/graphics/Paint;
-    const/high16 v2, 0x40800000        # 4.0f
-    invoke-virtual {v0, v2}, Landroid/graphics/Paint;->setTextSize(F)V
-    const v2, -16711936                # bright green
-    invoke-virtual {v0, v2}, Landroid/graphics/Paint;->setColor(I)V
-    sget-object v2, Landroid/graphics/Paint$Align;->CENTER:Landroid/graphics/Paint$Align;
-    invoke-virtual {v0, v2}, Landroid/graphics/Paint;->setTextAlign(Landroid/graphics/Paint$Align;)V
+    sget-object v11, Ldisplay/vmap/features/RingPainter;->paintDebug:Landroid/graphics/Paint;
 
-    # v1 = paintCircles (kept as Paint through the whole block)
-    move-object v1, v0
-
-    # Position: center of compass
+    # Position: top-left (cx - 0.7*R, cy - 0.7*R)
     sget v0, Ldisplay/vmap/features/RingPainter;->ringCenterX:I
-    int-to-float v5, v0                # v5 = centerX
+    int-to-float v5, v0
     sget v0, Ldisplay/vmap/features/RingPainter;->ringCenterY:I
-    int-to-float v6, v0                # v6 = centerY
+    int-to-float v6, v0
+    sget v0, Ldisplay/vmap/features/RingPainter;->ringR:I
+    int-to-float v0, v0
+    const v7, 0x3f333333                  # 0.7
+    mul-float v0, v0, v7
+    sub-float v5, v5, v0
+    sub-float v6, v6, v0
 
-    # Line 1: a bit above center
-    const/high16 v0, 0x41a00000        # 20.0f
-    sub-float v6, v6, v0               # y1 = centerY - 20
+    # lineStep = 15 * 1.25 = 18.75
+    const/high16 v8, 0x41960000           # 18.75
 
-    # ===== LINE 1: ±amp*100  freq*100Гц  SNR  NF*10000 =====
+    # Background rect
+    const/high16 v0, 0x43340000           # 180.0
+    add-float v7, v5, v0
+    const/high16 v0, 0x41200000           # 10.0
+    sub-float v2, v6, v0
+    const/high16 v0, 0x428c0000           # 70.0
+    add-float v3, v2, v0
+    new-instance v0, Landroid/graphics/RectF;
+    invoke-direct {v0, v5, v2, v7, v3}, Landroid/graphics/RectF;-><init>(FFFF)V
+    sget-object v4, Ldisplay/vmap/features/RingPainter;->paintDebugBg:Landroid/graphics/Paint;
+    invoke-virtual {p0, v0, v4}, Landroid/graphics/Canvas;->drawRect(Landroid/graphics/RectF;Landroid/graphics/Paint;)V
+
+    # First line baseline = top + 15
+    const/high16 v0, 0x41700000           # 15.0
+    add-float v6, v2, v0
+
+    # ===== LINE 1: AMP=1234 F=123Hz =====
     new-instance v0, Ljava/lang/StringBuilder;
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
-    const-string v2, "±"
+    const-string v2, "AMP="
     invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    # amp = sqrt(smoothEnergy) * 9.81 * 100
     sget v2, Lm/a;->smoothEnergy:F
     float-to-double v2, v2
     invoke-static {v2, v3}, Ljava/lang/Math;->sqrt(D)D
     move-result-wide v2
     double-to-float v2, v2
-    const v7, 0x411ccccc               # 9.81f
+    const v7, 0x411ccccc                  # 9.81
     mul-float v2, v2, v7
-    const/high16 v7, 0x42c80000        # 100.0f
+    const/high16 v7, 0x42c80000           # 100.0
     mul-float v2, v2, v7
     float-to-int v2, v2
     invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-
-    const-string v2, " "
+    const-string v2, " F="
     invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    # freq * 100
     sget v2, Lm/a;->dominantFreq:F
-    const/high16 v7, 0x42c80000        # 100.0f
+    const/high16 v7, 0x42c80000           # 100.0
     mul-float v2, v2, v7
     float-to-int v2, v2
     invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-
-    const-string v2, "Гц "
+    const-string v2, "Hz"
     invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v0
+    invoke-virtual {p0, v0, v5, v6, v11}, Landroid/graphics/Canvas;->drawText(Ljava/lang/String;FFLandroid/graphics/Paint;)V
 
-    const-string v2, "SNR"
+    # ===== LINE 2: SNR=12 NF=45 =====
+    add-float v6, v6, v8
+    new-instance v0, Ljava/lang/StringBuilder;
+    invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
+    const-string v2, "SNR="
     invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
     sget v2, Lm/a;->snrFiltered:F
-    const/high16 v7, 0x3f000000        # 0.5
+    const/high16 v7, 0x3f000000           # 0.5
     add-float v2, v2, v7
     float-to-int v2, v2
     invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-
-    const-string v2, " "
-    invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    const-string v2, "NF"
+    const-string v2, " NF="
     invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
     sget v2, Lm/a;->noiseFloor:F
-    const v7, 0x461c4000               # 10000.0f
+    const v7, 0x461c4000                  # 10000.0
     mul-float v2, v2, v7
     float-to-int v2, v2
     invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v0
+    invoke-virtual {p0, v0, v5, v6, v11}, Landroid/graphics/Canvas;->drawText(Ljava/lang/String;FFLandroid/graphics/Paint;)V
 
-    # Append angle
-    const-string v2, " "
+    # ===== LINE 3: ANG=270 STAT=THERM =====
+    add-float v6, v6, v8
+    new-instance v0, Ljava/lang/StringBuilder;
+    invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
+    const-string v2, "ANG="
     invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
     sget v2, Lm/a;->turbDir:F
     float-to-int v2, v2
     invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-    const-string v2, "\u00B0 "
+    const-string v2, " STAT="
     invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    # Append STAT:
-    const-string v2, "STAT:"
-    invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    # Status switch
     sget v2, Lm/a;->detStatus:I
     const/4 v3, 0x1
     if-eq v2, v3, :dbg_l1
-    const-string v2, "SUSP(1)"
+    const-string v2, "SUSP"
     goto :dbg_l0
     :dbg_l1
-        const/4 v3, 0x2
-        if-eq v2, v3, :dbg_l2
-        const-string v2, "THERM(2)"
-        goto :dbg_l0
+    const/4 v3, 0x2
+    if-eq v2, v3, :dbg_l2
+    const-string v2, "THERM"
+    goto :dbg_l0
     :dbg_l2
-        const/4 v3, 0x3
-        if-eq v2, v3, :dbg_l3
-        const-string v2, "INSID(3)"
-        goto :dbg_l0
+    const/4 v3, 0x3
+    if-eq v2, v3, :dbg_l3
+    const-string v2, "INSID"
+    goto :dbg_l0
     :dbg_l3
-        const-string v2, "SEARCH(0)"
+    const-string v2, "SEARCH"
     :dbg_l0
     invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-
-    # Draw single line at center
     invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
     move-result-object v0
-    invoke-virtual {p0, v0, v5, v6, v1}, Landroid/graphics/Canvas;->drawText(Ljava/lang/String;FFLandroid/graphics/Paint;)V
+    invoke-virtual {p0, v0, v5, v6, v11}, Landroid/graphics/Canvas;->drawText(Ljava/lang/String;FFLandroid/graphics/Paint;)V
+
+    # ===== LINE 4: CONF=42/50 RJCT=0 =====
+    add-float v6, v6, v8
+    new-instance v0, Ljava/lang/StringBuilder;
+    invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
+    const-string v2, "CONF="
+    invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    sget v2, Lm/a;->confirmCount:I
+    invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    const-string v2, "/"
+    invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    sget v2, Lm/a;->confirmTarget:I
+    invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    const-string v2, " RJCT="
+    invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    sget v2, Lm/a;->consecReject:I
+    invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    invoke-virtual {v0}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v0
+    invoke-virtual {p0, v0, v5, v6, v11}, Landroid/graphics/Canvas;->drawText(Ljava/lang/String;FFLandroid/graphics/Paint;)V
 
     :dbg_end
     return-void
