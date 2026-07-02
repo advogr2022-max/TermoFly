@@ -499,6 +499,204 @@
 
     invoke-virtual {p0, v1, v6, v3, v0}, Landroid/graphics/Canvas;->drawText(Ljava/lang/String;FFLandroid/graphics/Paint;)V
 
+    invoke-static {p0}, Ldisplay/vmap/features/RingPainter;->drawBlips(Landroid/graphics/Canvas;)V
+
+    return-void
+.end method
+
+.method public static drawBlips(Landroid/graphics/Canvas;)V
+    .locals 14
+
+    sget-boolean v0, Lcom/xcglobe/xclog/l;->blipEnabled:Z
+
+    if-nez v0, :skip
+
+    sget v0, Lcom/xcglobe/xclog/l;->blipAngle:F
+
+    const/high16 v1, -0x40800000    # -1.0f
+
+    cmpl-float v2, v0, v1
+
+    if-nez v2, :skip
+
+    invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
+
+    move-result-wide v2
+
+    sget-wide v4, Lcom/xcglobe/xclog/l;->blipTime:J
+
+    sub-long v2, v2, v4             # v2:v3 = age
+
+    sget-wide v4, Lcom/xcglobe/xclog/l;->blipLifeMs:J
+
+    cmp-long v6, v2, v4
+
+    if-gez v6, :alive              # age >= lifeMs? → expired
+
+    sput v1, Lcom/xcglobe/xclog/l;->blipAngle:F
+
+    goto :skip
+
+    :alive
+    # Save age to v6:v7 for brightness later (before v2 reused)
+    move-wide v6, v2                # v6:v7 = age (preserved)
+
+    # relativeAngle = blipAngle - heading
+    sget v1, Lm/g;->m:I
+
+    int-to-float v1, v1
+
+    sub-float v0, v0, v1
+
+    const v1, 0x3c8efa35            # π/180
+
+    mul-float/2addr v0, v1          # v0 = angle_rad
+
+    # distFactor = clamp(distance*0.01 - 0.15, 0.3, 0.9)
+    sget v1, Lcom/xcglobe/xclog/l;->blipDistance:F
+
+    const v2, 0x3c23d70a     # 0.01
+
+    mul-float v1, v1, v2
+
+    const v2, 0x3e19999a            # 0.15
+
+    sub-float/2addr v1, v2
+
+    const v2, 0x3e99999a     # 0.3
+
+    cmpg-float v3, v1, v2
+    if-ltz v3, :df_min     # distFactor < 0.3 → clamp
+    goto :df_min_skip
+    :df_min
+    move v1, v2            # clamp to 0.3
+    :df_min_skip
+    const v2, 0x3f666666     # 0.9
+
+    cmpl-float v3, v1, v2            # cmpl: -1 if dist>0.9
+    if-gtz v3, :df_max_skip          # dist < 0.9 → skip
+    move v1, v2                      # clamp to 0.9
+    :df_max_skip
+    # sin(angle_rad), cos(angle_rad)
+    move v8, v0                     # save angle_rad in v8
+
+    float-to-double v10, v8
+
+    invoke-static {v10, v11}, Ljava/lang/Math;->sin(D)D
+
+    move-result-wide v12
+
+    double-to-float v9, v12         # v9 = sin
+
+    float-to-double v10, v8
+
+    invoke-static {v10, v11}, Ljava/lang/Math;->cos(D)D
+
+    move-result-wide v12
+
+    double-to-float v8, v12         # v8 = cos
+
+    # px = cx + ringR * distFactor * sin
+    sget v10, Ldisplay/vmap/features/RingPainter;->ringCenterX:I
+
+    int-to-float v10, v10
+
+    sget v11, Ldisplay/vmap/features/RingPainter;->ringR:I
+
+    int-to-float v11, v11
+
+    mul-float/2addr v11, v1
+
+    mul-float v11, v11, v9
+
+    add-float v9, v10, v11          # v9 = px
+
+    # py = cy - ringR * distFactor * cos
+    sget v10, Ldisplay/vmap/features/RingPainter;->ringCenterY:I
+
+    int-to-float v10, v10
+
+    sget v11, Ldisplay/vmap/features/RingPainter;->ringR:I
+
+    int-to-float v11, v11
+
+    mul-float/2addr v11, v1
+
+    mul-float v11, v11, v8
+
+    sub-float v8, v10, v11          # v8 = py
+
+    # radius = max(4f, strength * 1.5f)
+    sget v10, Lcom/xcglobe/xclog/l;->blipStrength:F
+
+    const/high16 v11, 0x3fc00000    # 1.5
+
+    mul-float v10, v10, v11
+
+    const/high16 v11, 0x40800000    # 4.0
+
+    cmpg-float v12, v10, v11         # v10=radius, v11=4.0
+    if-ltz v12, :r_min               # radius < 4 → clamp
+    goto :r_min_skip
+    :r_min
+    move v10, v11                    # radius = 4
+    :r_min_skip
+    # Alpha: clamp(220 - age/lifeMs*200, 20, 220)
+    # v6:v7 = age (long, preserved from above)
+    long-to-float v11, v6           # v11 = age_float
+
+    sget-wide v12, Lcom/xcglobe/xclog/l;->blipLifeMs:J
+
+    long-to-float v12, v12
+
+    div-float v11, v11, v12         # t = age / lifeMs
+
+    const/high16 v12, 0x435c0000    # 220.0
+
+    const/high16 v13, 0x43c80000    # 400.0
+
+    mul-float v13, v11, v13         # age/lifeMs * 400
+
+    sub-float v12, v12, v13         # 220 - t*400
+
+    const/high16 v13, 0x41a00000    # 20.0
+
+    cmpg-float v0, v12, v13           # v12=alpha, v13=20.0
+    if-ltz v0, :a_min_ok             # alpha < 20 → clamp
+    goto :a_min_skip
+    :a_min_ok
+    move v12, v13                    # alpha = 20
+    :a_min_skip
+    const/high16 v0, 0x435c0000     # 220.0
+
+    cmpl-float v1, v12, v0           # cmpl: -1 if alpha > 220
+    if-gtz v1, :a_max_ok_skip        # alpha < 220 → skip
+    move v12, v0                     # alpha = 220
+    :a_max_ok_skip
+    float-to-int v12, v12
+
+    # Paint янтарный (255, 193, 7) с alpha
+    sget-object v0, Ldisplay/vmap/features/RingPainter;->paintCircles:Landroid/graphics/Paint;
+
+    invoke-virtual {v0, v12}, Landroid/graphics/Paint;->setAlpha(I)V
+
+    sget-object v0, Ldisplay/vmap/features/RingPainter;->paintCircles:Landroid/graphics/Paint;
+
+    const v1, -16193                 # 0xFFFFC107 = (255,193,7)
+
+    invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setColor(I)V
+
+    sget-object v0, Ldisplay/vmap/features/RingPainter;->paintCircles:Landroid/graphics/Paint;
+
+    sget-object v1, Landroid/graphics/Paint$Style;->FILL:Landroid/graphics/Paint$Style;
+
+    invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V
+
+    sget-object v0, Ldisplay/vmap/features/RingPainter;->paintCircles:Landroid/graphics/Paint;
+
+    invoke-virtual {p0, v9, v8, v10, v0}, Landroid/graphics/Canvas;->drawCircle(FFFLandroid/graphics/Paint;)V
+
+    :skip
     return-void
 .end method
 

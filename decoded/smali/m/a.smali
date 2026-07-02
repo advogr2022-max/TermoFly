@@ -10,7 +10,7 @@
 .end annotation
 
 
-# static fields
+# static fields (original)
 .field public static a:J = 0x0L
 
 .field private static b:Z = false
@@ -21,11 +21,62 @@
 
 .field private static final e:Lg/a;
 
+.field public static accelLpX:F = 0f
+.field public static accelLpY:F = 0f
+.field public static smoothEnergy:F = 0f
+
+# SignalProcessor biquad states (float[4] arrays)
+.field public static hpXState:[F
+.field public static lpXState:[F
+.field public static hpYState:[F
+.field public static lpYState:[F
+
+# RMS buffers (float[64])
+.field public static rmsBufX:[F
+.field public static rmsBufY:[F
+
+# SignalProcessor scalar state
+.field public static rmsIdx:I = 0
+.field public static rmsFill:I = 0
+.field public static rmsX:F = 0f
+.field public static rmsY:F = 0f
+.field public static meanX:F = 0f
+.field public static meanY:F = 0f
+.field public static turbLevel:F = 0f
+.field public static turbDir:F = 0f
+.field public static noiseFloor:F = 0.002f
+.field public static calibCount:I = 0
+
+# Zero-crossing detector
+.field public static prevBpX:F = 0f
+.field public static prevBpY:F = 0f
+.field public static zcCount:I = 0
+.field public static zcTimer:J = 0L
+.field public static dominantFreq:F = 1.0f
+
+# ThermalDetector state
+.field public static detStatus:I = 0
+.field public static aboveThresh:I = 0
+.field public static dirReady:Z = false
+.field public static confirmCount:I = 0
+.field public static confirmStart:F = 0f
+.field public static confirmTarget:I = 50
+.field public static confirmHalf:I = 25
+.field public static confirmSum1:F = 0f
+.field public static confirmSum2:F = 0f
+.field public static consecReject:I = 0
+.field public static blipConfirmed:Z = false
+.field public static hasBlip:Z = false
+.field public static lastAngle:F = 0f
+.field public static smoothDist:F = 60f
+.field public static snrFiltered:F = 0f
+
 
 # direct methods
 .method static constructor <clinit>()V
     .locals 3
 
+    # original g/a init
     new-instance v0, Lg/a;
 
     const/16 v1, 0x3e8
@@ -35,6 +86,40 @@
     invoke-direct {v0, v1, v2}, Lg/a;-><init>(IF)V
 
     sput-object v0, Lm/a;->e:Lg/a;
+
+    # init biquad state arrays [4]
+    const/4 v0, 0x4
+
+    new-array v1, v0, [F
+    sput-object v1, Lm/a;->hpXState:[F
+
+    new-array v1, v0, [F
+    sput-object v1, Lm/a;->lpXState:[F
+
+    new-array v1, v0, [F
+    sput-object v1, Lm/a;->hpYState:[F
+
+    new-array v1, v0, [F
+    sput-object v1, Lm/a;->lpYState:[F
+
+    # init RMS buffers [64]
+    const/16 v0, 0x40
+
+    new-array v1, v0, [F
+    sput-object v1, Lm/a;->rmsBufX:[F
+
+    new-array v0, v0, [F
+    sput-object v0, Lm/a;->rmsBufY:[F
+
+    # reset detection
+    invoke-static {}, Lm/a;->h()V
+
+    # init ZC timer
+    invoke-static {}, Ljava/lang/System;->elapsedRealtime()J
+
+    move-result-wide v0
+
+    sput-wide v0, Lm/a;->zcTimer:J
 
     return-void
 .end method
@@ -70,7 +155,7 @@
 .end method
 
 .method public static b()V
-    .locals 4
+    .locals 6
 
     sget-boolean v0, Lcom/xcglobe/xclog/l;->R:Z
 
@@ -99,19 +184,19 @@
     :goto_1
     sget-boolean v0, Lm/a;->c:Z
 
-    if-eqz v0, :cond_1
+    if-eqz v0, :cond_2
 
     sget-object v0, Lm/a;->d:Lm/a$a;
 
-    if-nez v0, :cond_1
+    if-nez v0, :cond_2
 
     sget-boolean v0, Lcom/xcglobe/xclog/l;->I:Z
 
-    if-eqz v0, :cond_1
+    if-eqz v0, :cond_2
 
     sget-boolean v0, Lm/g;->L:Z
 
-    if-nez v0, :cond_1
+    if-nez v0, :cond_2
 
     invoke-static {}, Lcom/xcglobe/xclog/App;->b()Lcom/xcglobe/xclog/App;
 
@@ -125,6 +210,7 @@
 
     check-cast v0, Landroid/hardware/SensorManager;
 
+    # Register PRESSURE sensor (type 6)
     const/4 v1, 0x6
 
     invoke-virtual {v0, v1}, Landroid/hardware/SensorManager;->getDefaultSensor(I)Landroid/hardware/Sensor;
@@ -139,13 +225,31 @@
 
     sput-object v2, Lm/a;->d:Lm/a$a;
 
+    # Register PRESSURE (SENSOR_DELAY_NORMAL = 3)
     sget-object v2, Lm/a;->d:Lm/a$a;
 
     const/4 v3, 0x3
 
     invoke-virtual {v0, v2, v1, v3}, Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;I)Z
 
-    move-result v0
+    # Register LINEAR_ACCELERATION (type 10, SENSOR_DELAY_GAME = 1)
+    sget-object v2, Lm/a;->d:Lm/a$a;
+
+    const/16 v3, 0xa
+
+    invoke-virtual {v0, v3}, Landroid/hardware/SensorManager;->getDefaultSensor(I)Landroid/hardware/Sensor;
+
+    move-result-object v3
+
+    if-eqz v3, :cond_1
+
+    const/4 v4, 0x1
+
+    invoke-virtual {v0, v2, v3, v4}, Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;I)Z
+
+    :cond_1
+    # If pressure sensor failed to register, clear d
+    sget-object v0, Lm/a;->d:Lm/a$a;
 
     if-nez v0, :cond_2
 
@@ -154,13 +258,6 @@
     sput-object v0, Lm/a;->d:Lm/a$a;
 
     goto :goto_2
-
-    :cond_1
-    sget-boolean v0, Lcom/xcglobe/xclog/l;->I:Z
-
-    if-nez v0, :cond_2
-
-    invoke-static {}, Lm/a;->e()V
 
     :cond_2
     :goto_2
@@ -258,4 +355,78 @@
     sget-object v0, Lm/a;->e:Lg/a;
 
     return-object v0
+.end method
+
+.method public static h()V
+    .locals 4
+
+    const/4 v0, 0x0
+
+    sput v0, Lm/a;->detStatus:I
+
+    sput v0, Lm/a;->aboveThresh:I
+
+    sput-boolean v0, Lm/a;->dirReady:Z
+
+    sput v0, Lm/a;->confirmCount:I
+
+    sput v0, Lm/a;->confirmStart:F
+
+    sput v0, Lm/a;->confirmSum1:F
+
+    sput v0, Lm/a;->confirmSum2:F
+
+    sput v0, Lm/a;->consecReject:I
+
+    sput-boolean v0, Lm/a;->blipConfirmed:Z
+
+    sput-boolean v0, Lm/a;->hasBlip:Z
+
+    sput v0, Lm/a;->lastAngle:F
+
+    const/high16 v1, 0x42700000    # 60f
+
+    sput v1, Lm/a;->smoothDist:F
+
+    sput v0, Lm/a;->snrFiltered:F
+
+    sput v0, Lm/a;->accelLpX:F
+
+    sput v0, Lm/a;->accelLpY:F
+
+    sput v0, Lm/a;->smoothEnergy:F
+
+    sput v0, Lm/a;->rmsIdx:I
+
+    sput v0, Lm/a;->rmsFill:I
+
+    sput v0, Lm/a;->calibCount:I
+
+    const v1, 0x3b03126f    # 0.002f
+
+    sput v1, Lm/a;->noiseFloor:F
+
+    sput v0, Lm/a;->prevBpX:F
+
+    sput v0, Lm/a;->prevBpY:F
+
+    sput v0, Lm/a;->zcCount:I
+
+    invoke-static {}, Ljava/lang/System;->elapsedRealtime()J
+
+    move-result-wide v1
+
+    sput-wide v1, Lm/a;->zcTimer:J
+
+    const/high16 v0, 0x3f800000    # 1.0f
+
+    sput v0, Lm/a;->dominantFreq:F
+
+    sput v0, Lm/a;->confirmTarget:I
+
+    const/16 v0, 0x19
+
+    sput v0, Lm/a;->confirmHalf:I
+
+    return-void
 .end method

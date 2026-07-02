@@ -175,6 +175,14 @@
 
 .field public static z:I
 
+# blip fields (accelerometer pre-thermal detection)
+.field public static blipAngle:F = -1.0f
+.field public static blipStrength:F = 0f
+.field public static blipDistance:F = 60f
+.field public static blipTime:J = 0L
+.field public static blipLifeMs:J = 8000L
+.field public static blipStatus:I = 0
+.field public static blipEnabled:Z = true
 
 # direct methods
 .method static constructor <clinit>()V
