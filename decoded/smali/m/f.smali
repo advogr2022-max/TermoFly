@@ -116,7 +116,7 @@
 
     sget-object v1, Lm/f$a;->a:Lm/f$a;
 
-    const/4 v2, 0x3
+    const/4 v2, 0x1
 
     const/4 v3, 0x4
 
@@ -248,7 +248,9 @@
 
     sput v0, Lm/f;->i:I
 
-    if-lt v0, v2, :cond_8
+    const/4 v3, 0x3
+
+    if-lt v0, v3, :cond_8
 
     iget-wide v0, p0, Ltypes/GpsVal;->d:J
 
