@@ -534,6 +534,28 @@
     invoke-static {p0}, Ldisplay/vmap/features/RingPainter;->drawBlips(Landroid/graphics/Canvas;)V
 
     # === DEBUG INFOBOX (4 lines, top-left of compass) ===
+    # Sync blipDebug from preferences
+    invoke-static {}, Lcom/xcglobe/xclog/App;->b()Lcom/xcglobe/xclog/App;
+
+    move-result-object v0
+
+    if-nez v0, :dbg_pref_ok
+
+    invoke-static {v0}, Landroid/preference/PreferenceManager;->getDefaultSharedPreferences(Landroid/content/Context;)Landroid/content/SharedPreferences;
+
+    move-result-object v0
+
+    const-string v1, "blip_debug"
+
+    const/4 v2, 0x0
+
+    invoke-interface {v0, v1, v2}, Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z
+
+    move-result v0
+
+    sput-boolean v0, Lcom/xcglobe/xclog/l;->blipDebug:Z
+
+    :dbg_pref_ok
     sget-boolean v0, Lcom/xcglobe/xclog/l;->blipDebug:Z
     if-eqz v0, :dbg_end
 
