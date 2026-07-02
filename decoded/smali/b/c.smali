@@ -231,7 +231,9 @@
 
     if-nez v9, :check_orig
 
-    sget-boolean v9, Lm/g;->z:Z
+    invoke-static {}, Lm/f;->d()Z
+
+    move-result v9
 
     if-eqz v9, :cond_5
 
