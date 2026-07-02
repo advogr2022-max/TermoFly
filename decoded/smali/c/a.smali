@@ -287,10 +287,6 @@
 
     div-long/2addr v0, v2
 
-    const-wide/16 v2, 0x3e8
-
-    div-long/2addr v0, v2
-
     rem-int/lit8 v5, v12, 0xa
 
     if-nez v5, :cond_3
@@ -305,17 +301,17 @@
 
     const-string v3, "play_speed"
 
-    const/4 v4, 0x5
+    const-string v4, "5"
 
-    invoke-interface {v2, v3, v4}, Landroid/content/SharedPreferences;->getInt(Ljava/lang/String;I)I
+    invoke-interface {v2, v3, v4}, Landroid/content/SharedPreferences;->getString(Ljava/lang/String;Ljava/lang/String;)Ljava/lang/String;
+
+    move-result-object v2
+
+    invoke-static {v2}, Ljava/lang/Integer;->parseInt(Ljava/lang/String;)I
 
     move-result v2
 
     int-to-long v2, v2
-
-    const-wide/16 v4, 0x3e8    # 1000
-
-    mul-long v0, v0, v4
 
     add-long/2addr v0, v14
 
