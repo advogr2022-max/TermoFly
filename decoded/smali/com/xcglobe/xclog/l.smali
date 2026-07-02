@@ -280,7 +280,9 @@
 
     sput-boolean v3, Lcom/xcglobe/xclog/l;->V:Z
 
-    sput v0, Lcom/xcglobe/xclog/l;->W:I
+    const/4 v5, 0x5
+
+    sput v5, Lcom/xcglobe/xclog/l;->W:I
 
     sput-boolean v0, Lcom/xcglobe/xclog/l;->X:Z
 
@@ -320,7 +322,7 @@
 
     sput-boolean v3, Lcom/xcglobe/xclog/l;->an:Z
 
-    sput-boolean v0, Lcom/xcglobe/xclog/l;->ao:Z
+    sput-boolean v3, Lcom/xcglobe/xclog/l;->ao:Z
 
     sput v0, Lcom/xcglobe/xclog/l;->ap:I
 
