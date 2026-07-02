@@ -116,7 +116,7 @@
 
     sget-object v1, Lm/f$a;->a:Lm/f$a;
 
-    const/4 v2, 0x3
+    const/4 v2, 0x1
 
     const/4 v3, 0x4
 
