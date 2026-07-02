@@ -13,5 +13,6 @@
         <ListPreference android:entries="@array/play_speed_entries" android:title="@string/play_speed" android:key="play_speed" android:summary="@string/play_speed_desc" android:defaultValue="5" android:entryValues="@array/play_speed_values" />
         <CheckBoxPreference android:title="@string/enable_blip" android:key="enable_blip" android:summary="@string/enable_blip_desc" android:defaultValue="false" />
         <CheckBoxPreference android:title="@string/blip_debug" android:key="blip_debug" android:summary="@string/blip_debug_desc" android:defaultValue="true" />
+        <CheckBoxPreference android:title="@string/blip_demo" android:key="blip_demo" android:summary="@string/blip_demo_desc" android:defaultValue="false" />
     </PreferenceCategory>
 </PreferenceScreen>

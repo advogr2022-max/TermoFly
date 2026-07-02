@@ -1698,5 +1698,8 @@
 
     invoke-static {}, Lm/g;->a()V
 
+    # Temporarily disabled — LDPlayer verifier rejects m.a$a
+    # invoke-static {}, Lm/a;->bAccel()V
+
     return-void
 .end method

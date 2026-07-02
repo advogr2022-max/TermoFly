@@ -551,9 +551,27 @@
 
     invoke-interface {v0, v1, v2}, Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z
 
-    move-result v0
+    move-result v3
 
-    sput-boolean v0, Lcom/xcglobe/xclog/l;->blipDebug:Z
+    sput-boolean v3, Lcom/xcglobe/xclog/l;->blipDebug:Z
+
+    # Read blip_demo from prefs (v0 still has SharedPreferences)
+    const-string v1, "blip_demo"
+
+    invoke-interface {v0, v1, v2}, Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z
+
+    move-result v3
+
+    sput-boolean v3, Lcom/xcglobe/xclog/l;->blipDemo:Z
+
+    # Read enable_blip from prefs
+    const-string v1, "enable_blip"
+
+    invoke-interface {v0, v1, v2}, Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z
+
+    move-result v3
+
+    sput-boolean v3, Lcom/xcglobe/xclog/l;->blipEnabled:Z
 
     :dbg_pref_ok
     sget-boolean v0, Lcom/xcglobe/xclog/l;->blipDebug:Z
@@ -561,6 +579,10 @@
     if-eqz v0, :dbg_end
 
     invoke-static {}, Lm/a;->b()V
+
+    # Temporarily disabled — LDPlayer verifier rejects m.a$a
+    # invoke-static {}, Lm/a;->bAccel()V
+
 
     sget-object v11, Ldisplay/vmap/features/RingPainter;->paintDebug:Landroid/graphics/Paint;
 
@@ -683,16 +705,15 @@
     move-result-object v0
     invoke-virtual {p0, v0, v5, v6, v11}, Landroid/graphics/Canvas;->drawText(Ljava/lang/String;FFLandroid/graphics/Paint;)V
 
-    # ===== LINE 4: SENS reg=1 run=1 (sensor state) =====
+    # ===== LINE 4: ACC cnt=N BARO=Z (accel event counter + baro state) =====
     add-float v6, v6, v8
     new-instance v0, Ljava/lang/StringBuilder;
     invoke-direct {v0}, Ljava/lang/StringBuilder;-><init>()V
-    const-string v2, "SENS reg="
+    const-string v2, "ACC cnt="
     invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-    invoke-static {}, Lm/a;->c()Z
-    move-result v2
-    invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Z)Ljava/lang/StringBuilder;
-    const-string v2, " run="
+    sget v2, Lm/a;->accelEventCount:I
+    invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    const-string v2, " BARO="
     invoke-virtual {v0, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
     invoke-static {}, Lm/a;->d()Z
     move-result v2

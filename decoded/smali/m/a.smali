@@ -25,6 +25,15 @@
 .field public static accelLpY:F = 0f
 .field public static smoothEnergy:F = 0f
 
+# Accel separate listener and state (independent from baro)
+.field private static f:Lm/a$a;
+
+.field private static g:Z = false
+
+.field public static accelEventCount:I = 0
+
+.field public static accelRegStartMs:J = 0L
+
 # SignalProcessor scalar state
 .field public static rmsIdx:I = 0
 .field public static rmsFill:I = 0
@@ -235,27 +244,101 @@
 
     sput-boolean v0, Lm/a;->b:Z
 
-    # Register LINEAR_ACCELERATION (type 10, SENSOR_DELAY_GAME = 1)
-    sget-object v2, Lm/a;->d:Lm/a$a;
-
-    const/16 v3, 0xa
-
-    invoke-virtual {v5, v3}, Landroid/hardware/SensorManager;->getDefaultSensor(I)Landroid/hardware/Sensor;
-
-    move-result-object v3
-
-    if-eqz v3, :cond_1
-
-    const/4 v4, 0x1
-
-    invoke-virtual {v5, v2, v3, v4}, Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;I)Z
-
-    :cond_1
-    # Accel registration done (or skipped) — pressure listener stays active
+    # Accel no longer registered here — m/a.bAccel() handles it separately
     goto :cond_2
 
     :cond_2
     :goto_2
+    return-void
+.end method
+
+.method public static bAccel()V
+    .locals 5
+
+    # Если акселерометр уже запущен → выходим
+    sget-boolean v0, Lm/a;->g:Z
+
+    if-nez v0, :acc_already
+
+    # Если listener уже есть → выходим
+    sget-object v0, Lm/a;->f:Lm/a$a;
+
+    if-nez v0, :acc_already
+
+    # Получаем SensorManager
+    invoke-static {}, Lcom/xcglobe/xclog/App;->b()Lcom/xcglobe/xclog/App;
+
+    move-result-object v0
+
+    const-string v1, "sensor"
+
+    invoke-virtual {v0, v1}, Lcom/xcglobe/xclog/App;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;
+
+    move-result-object v0
+
+    check-cast v0, Landroid/hardware/SensorManager;
+
+    # Try LINEAR_ACCELERATION first (type 10)
+    const/16 v1, 0xa
+
+    invoke-virtual {v0, v1}, Landroid/hardware/SensorManager;->getDefaultSensor(I)Landroid/hardware/Sensor;
+
+    move-result-object v1
+
+    if-eqz v1, :have_accel
+
+    # Fallback to TYPE_ACCELEROMETER (type 1)
+    const/4 v1, 0x1
+
+    invoke-virtual {v0, v1}, Landroid/hardware/SensorManager;->getDefaultSensor(I)Landroid/hardware/Sensor;
+
+    move-result-object v1
+
+    if-nez v1, :have_accel
+
+    # Нет акселерометра — выходим
+    return-void
+
+    :have_accel
+    # Создаём listener
+    new-instance v2, Lm/a$a;
+
+    invoke-direct {v2}, Lm/a$a;-><init>()V
+
+    sput-object v2, Lm/a;->f:Lm/a$a;
+
+    # Register with SENSOR_DELAY_GAME (1)
+    const/4 v3, 0x1
+
+    invoke-virtual {v0, v2, v1, v3}, Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;I)Z
+
+    move-result v4
+
+    if-nez v4, :acc_ok
+
+    # Register failed — cleanup
+    const/4 v0, 0x0
+
+    sput-object v0, Lm/a;->f:Lm/a$a;
+
+    return-void
+
+    :acc_ok
+    const/4 v0, 0x1
+
+    sput-boolean v0, Lm/a;->g:Z
+
+    # Set registration timestamp
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
+
+    move-result-wide v0
+
+    sput-wide v0, Lm/a;->accelRegStartMs:J
+
+    # Reset algorithm state
+    invoke-static {}, Lm/a;->h()V
+
+    :acc_already
     return-void
 .end method
 
@@ -330,6 +413,41 @@
     const/4 v0, 0x0
 
     sput-boolean v0, Lm/a;->b:Z
+
+    return-void
+.end method
+
+.method public static eAccel()V
+    .locals 2
+
+    sget-object v0, Lm/a;->f:Lm/a$a;
+
+    if-eqz v0, :cond_0
+
+    invoke-static {}, Lcom/xcglobe/xclog/App;->b()Lcom/xcglobe/xclog/App;
+
+    move-result-object v0
+
+    const-string v1, "sensor"
+
+    invoke-virtual {v0, v1}, Lcom/xcglobe/xclog/App;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;
+
+    move-result-object v0
+
+    check-cast v0, Landroid/hardware/SensorManager;
+
+    sget-object v1, Lm/a;->f:Lm/a$a;
+
+    invoke-virtual {v0, v1}, Landroid/hardware/SensorManager;->unregisterListener(Landroid/hardware/SensorEventListener;)V
+
+    :cond_0
+    const/4 v0, 0x0
+
+    sput-object v0, Lm/a;->f:Lm/a$a;
+
+    sput-boolean v0, Lm/a;->g:Z
+
+    sput v0, Lm/a;->accelEventCount:I
 
     return-void
 .end method
