@@ -248,7 +248,9 @@
 
     sput v0, Lm/f;->i:I
 
-    if-lt v0, v2, :cond_8
+    const/4 v5, 0x3
+
+    if-lt v0, v5, :cond_8
 
     iget-wide v0, p0, Ltypes/GpsVal;->d:J
 
