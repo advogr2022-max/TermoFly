@@ -21,7 +21,7 @@
 
 .field private static i:F = 0.0f
 
-.field private static j:F = -2.0f
+.field private static j:F = -3.0f
 
 .field private static k:Lg/e;
 
@@ -213,7 +213,7 @@
 
     sget v0, Lb/c;->g:F
 
-    const v1, 0xbe4ccccd    # -0.2f
+    const v1, 0x3dcccccd    # 0.1f
 
     const/high16 v2, 0x3f800000    # 1.0f
 
@@ -227,11 +227,9 @@
 
     sget v1, Lb/c;->g:F
 
-    const/high16 v5, 0x3fa00000    # 1.25f
-
     const/high16 v4, 0x40000000    # 2.0f
 
-    cmpg-float v1, v1, v5
+    cmpg-float v1, v1, v4
 
     if-gez v1, :cond_0
 
@@ -244,7 +242,7 @@
     :cond_0
     sget v1, Lb/c;->g:F
 
-    sub-float/2addr v1, v5
+    sub-float/2addr v1, v4
 
     mul-float v1, v1, v0
 
@@ -269,13 +267,13 @@
 
     sget v1, Lb/c;->g:F
 
-    cmpl-float v1, v1, v5
+    cmpl-float v1, v1, v4
 
     if-lez v1, :cond_1
 
     sget v1, Lb/c;->g:F
 
-    sub-float/2addr v1, v5
+    sub-float/2addr v1, v4
 
     const/4 v2, 0x0
 
@@ -308,7 +306,7 @@
     sput v4, Lb/c;->i:F
 
     :cond_1
-    const/high16 v1, 0x43d00000    # 416.0f
+    const/high16 v1, 0x43af0000    # 350.0f
 
     cmpl-float v1, v0, v1
 
