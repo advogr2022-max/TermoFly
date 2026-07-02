@@ -9,4 +9,8 @@
         <EditTextPreference android:title="@string/target_email" android:key="user.email_igc" android:summary="@string/target_email_desc" />
         <CheckBoxPreference android:title="@string/auto_export_igc" android:key="auto_export_igc" android:summary="@string/auto_export_igc_desc" android:defaultValue="false" />
     </PreferenceCategory>
+    <PreferenceCategory android:title="@string/extender">
+        <ListPreference android:entries="@array/play_speed_entries" android:title="@string/play_speed" android:key="play_speed" android:summary="@string/play_speed_desc" android:defaultValue="5" android:entryValues="@array/play_speed_values" />
+        <CheckBoxPreference android:title="@string/enable_blip" android:key="enable_blip" android:summary="@string/enable_blip_desc" android:defaultValue="false" />
+    </PreferenceCategory>
 </PreferenceScreen>

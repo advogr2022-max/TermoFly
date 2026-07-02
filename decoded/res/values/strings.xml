@@ -14,6 +14,11 @@
     <string name="alt_over_goal">Alt. over goal</string>
     <string name="altitude">Altitude</string>
     <string name="app_name">TermoFly</string>
+    <string name="extender">Extender</string>
+    <string name="play_speed">Play speed</string>
+    <string name="play_speed_desc">Simulation playback speed multiplier</string>
+    <string name="enable_blip">Enable blip</string>
+    <string name="enable_blip_desc">Sound signal when thermal detected</string>
     <string name="ar_car">Car driving</string>
     <string name="ar_default">Default</string>
     <string name="ar_device_default">Device default</string>

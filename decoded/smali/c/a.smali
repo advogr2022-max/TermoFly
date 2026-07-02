@@ -295,11 +295,31 @@
 
     if-nez v5, :cond_3
 
-    const-wide/16 v2, 0x96    # 150 (5x speed)
+    invoke-static {}, Lcom/xcglobe/xclog/App;->b()Lcom/xcglobe/xclog/App;
 
-    mul-long v0, v0, v2
+    move-result-object v2
+
+    invoke-static {v2}, Landroid/preference/PreferenceManager;->getDefaultSharedPreferences(Landroid/content/Context;)Landroid/content/SharedPreferences;
+
+    move-result-object v2
+
+    const-string v3, "play_speed"
+
+    const/4 v4, 0x5
+
+    invoke-interface {v2, v3, v4}, Landroid/content/SharedPreferences;->getInt(Ljava/lang/String;I)I
+
+    move-result v2
+
+    int-to-long v2, v2
+
+    const-wide/16 v4, 0x3e8    # 1000
+
+    mul-long v0, v0, v4
 
     add-long/2addr v0, v14
+
+    div-long/2addr v0, v2
 
     cmp-long v2, v0, v14
 
