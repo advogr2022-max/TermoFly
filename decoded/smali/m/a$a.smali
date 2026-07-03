@@ -93,24 +93,33 @@
     const/4 v2, 0x1
     aget v2, v0, v2
 
+    # Quick-start: on first call, set HP x states to input for steady-state
+    const/4 v0, 0x1
+    if-ne v7, v0, :qs_done
+    sput v1, Lm/a;->bq_hx1:F
+    sput v1, Lm/a;->bq_hx2:F
+    sput v2, Lm/a;->bq_hx1y:F
+    sput v2, Lm/a;->bq_hx2y:F
+    :qs_done
+
     # ========= HP 0.25Hz X =========
     sget v3, Lm/a;->bq_hx1:F
     sget v4, Lm/a;->bq_hx2:F
     sget v5, Lm/a;->bq_hy1:F
     sget v6, Lm/a;->bq_hy2:F
 
-    const v10, 0x3f7a5e35
+    const v10, 0x3f7fc5cb
     mul-float v10, v10, v1
-    const v11, 0xbffa5e35
+    const v11, 0xbfffc5cb
     mul-float v11, v11, v3
     add-float v10, v10, v11
-    const v11, 0x3f7a5e35
+    const v11, 0x3f7fc5cb
     mul-float v11, v11, v4
     add-float v10, v10, v11
-    const v11, 0xbffa4dd3
+    const v11, 0xbfffc5c4
     mul-float v11, v11, v5
     sub-float v10, v10, v11
-    const v11, 0x3f74dd2f
+    const v11, 0x3f7f8ba3
     mul-float v11, v11, v6
     sub-float v10, v10, v11
 
@@ -137,18 +146,18 @@
     sget v5, Lm/a;->bq_ly1:F
     sget v6, Lm/a;->bq_ly2:F
 
-    const v10, 0x3ca469d7
+    const v10, 0x3e5387a2
     mul-float v10, v10, v8
-    const v11, 0x3d2469d7
+    const v11, 0x3ed387a2
     mul-float v11, v11, v3
     add-float v10, v10, v11
-    const v11, 0x3ca469d7
+    const v11, 0x3e5387a2
     mul-float v11, v11, v4
     add-float v10, v10, v11
-    const v11, 0xbfc7d8ae
+    const v11, 0xbebd32b1
     mul-float v11, v11, v5
     sub-float v10, v10, v11
-    const v11, 0x3f243958
+    const v11, 0x3e4883ea
     mul-float v11, v11, v6
     sub-float v10, v10, v11
 
@@ -175,18 +184,18 @@
     sget v5, Lm/a;->bq_hy1y:F
     sget v6, Lm/a;->bq_hy2y:F
 
-    const v10, 0x3f7a5e35
+    const v10, 0x3f7fc5cb
     mul-float v10, v10, v2
-    const v11, 0xbffa5e35
+    const v11, 0xbfffc5cb
     mul-float v11, v11, v3
     add-float v10, v10, v11
-    const v11, 0x3f7a5e35
+    const v11, 0x3f7fc5cb
     mul-float v11, v11, v4
     add-float v10, v10, v11
-    const v11, 0xbffa4dd3
+    const v11, 0xbfffc5c4
     mul-float v11, v11, v5
     sub-float v10, v10, v11
-    const v11, 0x3f74dd2f
+    const v11, 0x3f7f8ba3
     mul-float v11, v11, v6
     sub-float v10, v10, v11
 
@@ -213,18 +222,18 @@
     sget v5, Lm/a;->bq_ly1y:F
     sget v6, Lm/a;->bq_ly2y:F
 
-    const v10, 0x3ca469d7
+    const v10, 0x3e5387a2
     mul-float v10, v10, v9
-    const v11, 0x3d2469d7
+    const v11, 0x3ed387a2
     mul-float v11, v11, v3
     add-float v10, v10, v11
-    const v11, 0x3ca469d7
+    const v11, 0x3e5387a2
     mul-float v11, v11, v4
     add-float v10, v10, v11
-    const v11, 0xbfc7d8ae
+    const v11, 0xbebd32b1
     mul-float v11, v11, v5
     sub-float v10, v10, v11
-    const v11, 0x3f243958
+    const v11, 0x3e4883ea
     mul-float v11, v11, v6
     sub-float v10, v10, v11
 
@@ -287,41 +296,9 @@
     invoke-direct {p0, v12, v13}, Lm/a$a;->updateEnergy(FF)V
     invoke-direct {p0}, Lm/a$a;->updateStatus()V
 
-    # Log every 50th event
-    sget v0, Lm/a;->accelEventCount:I
-    rem-int/lit8 v1, v0, 0x32
-    if-nez v1, :log_skip
-    const-string v0, "TermoFly"
-    new-instance v1, Ljava/lang/StringBuilder;
-    invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
-    const-string v2, "bpX="
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-    invoke-virtual {v1, v12}, Ljava/lang/StringBuilder;->append(F)Ljava/lang/StringBuilder;
-    const-string v2, " bpY="
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-    invoke-virtual {v1, v13}, Ljava/lang/StringBuilder;->append(F)Ljava/lang/StringBuilder;
-    const-string v2, " zc="
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-    sget v2, Lm/a;->zcCount:I
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-    const-string v2, " se="
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-    sget v2, Lm/a;->smoothEnergy:F
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(F)Ljava/lang/StringBuilder;
-    const-string v2, " nf="
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-    sget v2, Lm/a;->noiseFloor:F
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(F)Ljava/lang/StringBuilder;
-    const-string v2, " snr="
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-    sget v2, Lm/a;->snrFiltered:F
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(F)Ljava/lang/StringBuilder;
-    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-    move-result-object v1
-    invoke-static {v0, v1}, Landroid/util/Log;->d(Ljava/lang/String;Ljava/lang/String;)I
-    :log_skip
     return-void
 .end method
+
 .method private updateFreq()V
     .locals 16
     invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
@@ -339,16 +316,42 @@
     sget v5, Lm/a;->zcCount:I
     int-to-float v5, v5
     div-float v4, v5, v4
-    const v5, 0x3e800000
+    const/high16 v5, 0x0
     cmpg-float v2, v4, v5
-    if-ltz v2, :fm1
+    if-gez v2, :fm1
     move v4, v5
     :fm1
-    const v5, 0x40200000
+    const v5, 0x41200000
     cmpg-float v2, v4, v5
     if-ltz v2, :fm2
     move v4, v5
     :fm2
+    # Fallback: if freq < 0.5 → use amplitude instead
+    const/high16 v5, 0x3f000000
+    cmpg-float v2, v4, v5
+    if-ltz v2, :fm_amp
+    goto :fm_clamp_high
+    :fm_amp
+    sget v5, Lm/a;->smoothEnergy:F
+    const/high16 v15, 0x42c80000
+    mul-float v5, v5, v15
+    move v4, v5
+    :fm_clamp_high
+    # Upper clamp: 10.0 Hz
+    const/high16 v5, 0x41200000
+    cmpg-float v2, v4, v5
+    if-ltz v2, :fm_done
+    move v4, v5
+    :fm_done
+    # Round to 1 decimal: round(v4 * 10) / 10
+    const/high16 v5, 0x41200000
+    mul-float v4, v4, v5
+    const/high16 v5, 0x3f000000
+    add-float v4, v4, v5
+    float-to-int v3, v4
+    int-to-float v4, v3
+    const/high16 v5, 0x41200000
+    div-float v4, v4, v5
     sput v4, Lm/a;->dominantFreq:F
     const/4 v4, 0x0
     sput v4, Lm/a;->zcCount:I
@@ -455,21 +458,21 @@
     const/high16 v13, 0x40400000
     mul-float v13, v10, v13
     cmpg-float v2, v12, v13
-    if-ltz v2, :ss1
+    if-gtz v2, :ss1
     move v12, v13
     :ss1
     const v14, 0x3ca3d70a
     const v15, 0x40a00000
     mul-float v15, v10, v15
     cmpg-float v2, v14, v15
-    if-ltz v2, :st1
+    if-gtz v2, :st1
     move v14, v15
     :st1
     const v15, 0x3da3d70a
     const v9, 0x41200000
     mul-float v9, v10, v9
     cmpg-float v2, v15, v9
-    if-ltz v2, :si1
+    if-gtz v2, :si1
     move v15, v9
     :si1
     sget v7, Lm/a;->smoothEnergy:F
@@ -495,8 +498,8 @@
     sput v4, Lm/a;->detStatus:I
     sput v4, Lm/a;->aboveThresh:I
     sput-boolean v4, Lm/a;->dirReady:Z
-    const/high16 v8, -0x40800000
-    sput v8, Lcom/xcglobe/xclog/l;->blipAngle:F
+    const-wide/16 v0, 0x3e8
+    sput-wide v0, Lcom/xcglobe/xclog/l;->blipLifeMs:J
     sput v4, Lcom/xcglobe/xclog/l;->blipStatus:I
     return-void
     :st_s
@@ -504,18 +507,15 @@
     add-int/lit8 v4, v4, 0x1
     sput v4, Lm/a;->aboveThresh:I
     sget-boolean v4, Lm/a;->dirReady:Z
-    if-eqz v4, :dd1
+    if-nez v4, :dd1
     sget v4, Lm/a;->aboveThresh:I
     const/16 v3, 0x19
-    if-lt v4, v3, :dn1
-    goto :dnt
-    :dn1
+    if-lt v4, v3, :dd1
     const/4 v4, 0x1
     sput-boolean v4, Lm/a;->dirReady:Z
-    :dnt
     :dd1
     sget-boolean v4, Lm/a;->dirReady:Z
-    if-eqz v4, :rdr
+    if-nez v4, :rdr
     return-void
     :rdr
     sget v5, Lm/a;->prevBpY:F
@@ -538,7 +538,15 @@
     sub-float/2addr v6, v8
     :nn3
     sput v6, Lm/a;->turbDir:F
-    sget v4, Lm/a;->confirmCount:I
+    # EMA smooth: smoothDir += (new - smoothDir) * 0.2
+    sget v15, Lm/a;->lastAngle:F
+    sub-float v15, v6, v15
+    const v14, 0x3e4ccccd
+    mul-float v15, v15, v14
+    sget v14, Lm/a;->lastAngle:F
+    add-float v14, v14, v15
+    sput v14, Lm/a;->lastAngle:F
+    # confirmation chain continues below
     const/4 v3, 0x5
     if-le v4, v3, :ac1
     goto :sar
@@ -568,7 +576,7 @@
     sput v7, Lm/a;->confirmSum1:F
     sput v7, Lm/a;->confirmSum2:F
     sget v7, Lm/a;->dominantFreq:F
-    const v8, 0x3e800000
+    const/high16 v8, 0x0
     cmpg-float v9, v7, v8
     if-ltz v9, :fm3
     move v7, v8
@@ -582,8 +590,8 @@
     if-ge v2, v3, :tm1
     move v2, v3
     :tm1
-    const/16 v3, 0x32
-    if-gt v2, v3, :tm2
+    const/16 v3, 0xfa
+    if-lt v2, v3, :tm2
     move v2, v3
     :tm2
     sput v2, Lm/a;->confirmTarget:I
@@ -593,22 +601,41 @@
     sget v4, Lm/a;->confirmCount:I
     add-int/lit8 v4, v4, 0x1
     sput v4, Lm/a;->confirmCount:I
+
+    # Compute amp = |bpX| + |bpY|
+    sget v9, Lm/a;->prevBpX:F
+    invoke-static {v9}, Ljava/lang/Math;->abs(F)F
+    move-result v9
+    sget v11, Lm/a;->prevBpY:F
+    invoke-static {v11}, Ljava/lang/Math;->abs(F)F
+    move-result v11
+    add-float v9, v9, v11
+
     sget v4, Lm/a;->confirmHalf:I
     sget v2, Lm/a;->confirmCount:I
     if-gt v2, v4, :ac2
-    sget v9, Lm/a;->confirmSum1:F
-    add-float/2addr v9, v6
-    sput v9, Lm/a;->confirmSum1:F
+    sget v11, Lm/a;->confirmSum1:F
+    add-float v11, v11, v9
+    sput v11, Lm/a;->confirmSum1:F
     goto :acd
     :ac2
-    sget v9, Lm/a;->confirmSum2:F
-    add-float/2addr v9, v6
-    sput v9, Lm/a;->confirmSum2:F
+    sget v11, Lm/a;->confirmSum2:F
+    add-float v11, v11, v9
+    sput v11, Lm/a;->confirmSum2:F
+    # Weak test blip during second half of window
+    sget-boolean v4, Lm/a;->blipConfirmed:Z
+    if-eqz v4, :acd
+    sput v6, Lcom/xcglobe/xclog/l;->blipAngle:F
+    const-wide/16 v0, 0xbb8
+    sput-wide v0, Lcom/xcglobe/xclog/l;->blipLifeMs:J
+    invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
+    move-result-wide v0
+    sput-wide v0, Lcom/xcglobe/xclog/l;->blipTime:J
     :acd
     sget v4, Lm/a;->confirmTarget:I
     sget v2, Lm/a;->confirmCount:I
-    if-lt v2, v4, :vr1
-    goto :sv1
+    if-lt v2, v4, :sv1
+    goto :vr1
     :vr1
     sget v4, Lm/a;->confirmHalf:I
     int-to-float v13, v4
@@ -623,8 +650,8 @@
     const v7, 0x3f99999a
     mul-float v7, v8, v7
     cmpg-float v10, v9, v7
-    if-ltz v10, :ic1
-    goto :cr1
+    if-ltz v10, :cr1
+    goto :ic1
     :ic1
     const/4 v4, 0x1
     sput-boolean v4, Lm/a;->blipConfirmed:Z
@@ -633,7 +660,7 @@
     const/4 v4, 0x0
     sput v4, Lm/a;->consecReject:I
     sput v4, Lm/a;->confirmCount:I
-    goto :sv1
+    goto :dw1
     :cr1
     const v7, 0x3f4ccccd
     mul-float v8, v8, v7
@@ -658,13 +685,30 @@
     sput v4, Lm/a;->confirmCount:I
     return-void
     :sv1
-    sget-boolean v4, Lm/a;->blipConfirmed:Z
-    if-eqz v4, :dw1
-    sget v4, Lm/a;->confirmCount:I
-    sget v2, Lm/a;->confirmHalf:I
-    if-gt v4, v2, :dw1
-    goto :so1
+    return-void
     :dw1
+    # Decay check: if amp < bornAmp/2 → kill blip
+    sget v9, Lm/a;->prevBpX:F
+    invoke-static {v9}, Ljava/lang/Math;->abs(F)F
+    move-result v9
+    sget v11, Lm/a;->prevBpY:F
+    invoke-static {v11}, Ljava/lang/Math;->abs(F)F
+    move-result v11
+    add-float v9, v9, v11
+    sget v11, Lcom/xcglobe/xclog/l;->blipBornAmp:F
+    const/high16 v8, 0x3f000000
+    mul-float v11, v11, v8
+    cmpg-float v8, v9, v11
+    if-ltz v8, :kill_blip
+    # Check if new blip — save born amp
+    sget v8, Lcom/xcglobe/xclog/l;->blipAngle:F
+    const/high16 v10, -0x40800000
+    cmpl-float v5, v8, v10
+    if-eqz v5, :new_blip_amp
+    goto :after_amp
+    :new_blip_amp
+    sput v9, Lcom/xcglobe/xclog/l;->blipBornAmp:F
+    :after_amp
     sget v7, Lm/a;->snrFiltered:F
     const/high16 v8, 0x41700000
     div-float v7, v7, v8
@@ -725,21 +769,29 @@
     sput v10, Lcom/xcglobe/xclog/l;->blipDistance:F
     sget v10, Lm/a;->detStatus:I
     const/4 v11, 0x3
-    if-ne v10, v11, :lf15
+    if-ne v10, v11, :not_inside
+    # INSIDE (status=3)
+    const-wide/16 v0, 0x2710
+    sput-wide v0, Lcom/xcglobe/xclog/l;->blipLifeMs:J
+    goto :ld1
+    :not_inside
     sget v10, Lcom/xcglobe/xclog/l;->blipStrength:F
     const/high16 v11, 0x40400000
     cmpg-float v12, v10, v11
-    if-ltz v12, :lf12
-    const-wide/16 v0, 0x1f40
+    if-ltz v12, :lf_weak
+    # STRONG (strength >= 3)
+    const-wide/16 v0, 0x1b58
     sput-wide v0, Lcom/xcglobe/xclog/l;->blipLifeMs:J
     goto :ld1
-    :lf12
-    const-wide/16 v0, 0x2ee0
+    :lf_weak
+    # WEAK (strength < 3)
+    const-wide/16 v0, 0x1388
     sput-wide v0, Lcom/xcglobe/xclog/l;->blipLifeMs:J
     goto :ld1
-    :lf15
-    const-wide/16 v0, 0x3a98
-    sput-wide v0, Lcom/xcglobe/xclog/l;->blipLifeMs:J
+    :kill_blip
+    const/high16 v8, -0x40800000
+    sput v8, Lcom/xcglobe/xclog/l;->blipAngle:F
+    return-void
     :ld1
     sput v6, Lcom/xcglobe/xclog/l;->blipAngle:F
     sget v4, Lm/a;->detStatus:I

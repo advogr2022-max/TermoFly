@@ -182,6 +182,7 @@
 .field public static blipTime:J = 0L
 .field public static blipLifeMs:J = 8000L
 .field public static blipStatus:I = 0
+.field public static blipBornAmp:F = 0f
 .field public static blipEnabled:Z = true
 .field public static blipDebug:Z = true
 

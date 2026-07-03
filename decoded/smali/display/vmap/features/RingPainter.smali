@@ -533,6 +533,16 @@
 
     invoke-static {p0}, Ldisplay/vmap/features/RingPainter;->drawBlips(Landroid/graphics/Canvas;)V
 
+    # Save and undo rotation so debug box stays fixed on screen
+    invoke-virtual {p0}, Landroid/graphics/Canvas;->save()I
+    sget v0, Lm/g;->m:I
+    int-to-float v0, v0
+    sget v1, Ldisplay/vmap/features/RingPainter;->ringCenterX:I
+    int-to-float v1, v1
+    sget v2, Ldisplay/vmap/features/RingPainter;->ringCenterY:I
+    int-to-float v2, v2
+    invoke-virtual {p0, v0, v1, v2}, Landroid/graphics/Canvas;->rotate(FFF)V
+
     # === DEBUG INFOBOX (4 lines, top-left of compass) ===
     # Sync blipDebug from preferences
     invoke-static {}, Lcom/xcglobe/xclog/App;->b()Lcom/xcglobe/xclog/App;
@@ -547,7 +557,7 @@
 
     const-string v1, "blip_debug"
 
-    const/4 v2, 0x0
+    const/4 v2, 0x1
 
     invoke-interface {v0, v1, v2}, Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z
 
@@ -555,8 +565,10 @@
 
     sput-boolean v3, Lcom/xcglobe/xclog/l;->blipDebug:Z
 
-    # Read blip_demo from prefs (v0 still has SharedPreferences)
+    # Read blip_demo from prefs
     const-string v1, "blip_demo"
+
+    const/4 v2, 0x0
 
     invoke-interface {v0, v1, v2}, Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z
 
@@ -723,40 +735,13 @@
     invoke-virtual {p0, v0, v5, v6, v11}, Landroid/graphics/Canvas;->drawText(Ljava/lang/String;FFLandroid/graphics/Paint;)V
 
     :dbg_end
+    invoke-virtual {p0}, Landroid/graphics/Canvas;->restore()V
     return-void
 .end method
 
 .method public static drawBlips(Landroid/graphics/Canvas;)V
     .locals 14
 
-    # === Fix #4: blipDemo — синтетический blip при любом движении ===
-    sget-boolean v0, Lcom/xcglobe/xclog/l;->blipDemo:Z
-    if-eqz v0, :check_real
-
-    sget v0, Lm/a;->smoothEnergy:F
-    const v1, 0x3a83126f            # 0.0005
-    cmpg-float v2, v0, v1
-    if-ltz v2, :demo_no_motion
-
-    # Синтетический blip спереди
-    const/4 v0, 0x0
-    sput v0, Lcom/xcglobe/xclog/l;->blipAngle:F
-    const/4 v0, 0x2
-    sput v0, Lcom/xcglobe/xclog/l;->blipStatus:I
-    const v0, 0x40400000            # 3.0
-    sput v0, Lcom/xcglobe/xclog/l;->blipStrength:F
-    const v0, 0x42700000            # 60.0
-    sput v0, Lcom/xcglobe/xclog/l;->blipDistance:F
-    const-wide/16 v0, 0x1f40        # 8000ms
-    sput-wide v0, Lcom/xcglobe/xclog/l;->blipLifeMs:J
-    invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
-    move-result-wide v0
-    sput-wide v0, Lcom/xcglobe/xclog/l;->blipTime:J
-    goto :check_real
-
-    :demo_no_motion
-    const/high16 v0, -0x40800000    # -1.0
-    sput v0, Lcom/xcglobe/xclog/l;->blipAngle:F
 
     :check_real
     sget-boolean v0, Lcom/xcglobe/xclog/l;->blipEnabled:Z
@@ -783,7 +768,7 @@
 
     cmp-long v6, v2, v4
 
-    if-gez v6, :alive              # age >= lifeMs? → expired
+    if-ltz v6, :alive              # age < lifeMs? → alive
 
     sput v1, Lcom/xcglobe/xclog/l;->blipAngle:F
 

@@ -289,7 +289,7 @@
     :do_register_accel
     sget-object v2, Lm/a;->d:Lm/a$a;
 
-    const/4 v3, 0x1                # SENSOR_DELAY_GAME
+    const v3, 0x4e20                # 20000us = 50Hz
 
     invoke-virtual {v5, v2, v1, v3}, Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;I)Z
 
@@ -356,8 +356,8 @@
 
     sput-object v2, Lm/a;->f:Lm/a$a;
 
-    # Register with SENSOR_DELAY_GAME (1)
-    const/4 v3, 0x1
+    # Register with 20000us = 50Hz
+    const v3, 0x4e20
 
     invoke-virtual {v0, v2, v1, v3}, Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;I)Z
 
