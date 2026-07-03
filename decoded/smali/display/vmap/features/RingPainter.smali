@@ -585,6 +585,17 @@
 
     sput-boolean v3, Lcom/xcglobe/xclog/l;->blipEnabled:Z
 
+    # Read voice_enabled from prefs
+    const-string v1, "voice_enabled"
+
+    const/4 v2, 0x0
+
+    invoke-interface {v0, v1, v2}, Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z
+
+    move-result v3
+
+    sput-boolean v3, Lcom/xcglobe/xclog/l;->voiceEnabled:Z
+
     :dbg_pref_ok
     sget-boolean v0, Lcom/xcglobe/xclog/l;->blipDebug:Z
 

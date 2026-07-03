@@ -185,6 +185,7 @@
 .field public static blipBornAmp:F = 0f
 .field public static blipEnabled:Z = true
 .field public static blipDebug:Z = true
+.field public static voiceEnabled:Z = false
 
 .field public static blipDemo:Z = false
 

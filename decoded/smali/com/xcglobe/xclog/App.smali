@@ -1701,6 +1701,13 @@
     # Register sensors at startup
     invoke-static {}, Lm/a;->b()V
 
+    # Init TTS voice prompts
+    invoke-static {}, Lcom/xcglobe/xclog/TtsManager;->getInstance()Lcom/xcglobe/xclog/TtsManager;
+    move-result-object v0
+    invoke-virtual {p0}, Lcom/xcglobe/xclog/App;->getApplicationContext()Landroid/content/Context;
+    move-result-object v1
+    invoke-virtual {v0, v1}, Lcom/xcglobe/xclog/TtsManager;->init(Landroid/content/Context;)V
+
     # Temporarily disabled — LDPlayer verifier rejects m.a$a
     # invoke-static {}, Lm/a;->bAccel()V
 

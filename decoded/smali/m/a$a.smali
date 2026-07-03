@@ -660,6 +660,35 @@
     const/4 v4, 0x0
     sput v4, Lm/a;->consecReject:I
     sput v4, Lm/a;->confirmCount:I
+
+    # Voice prompt with direction
+    sget-boolean v4, Lcom/xcglobe/xclog/l;->voiceEnabled:Z
+    if-eqz v4, :voice_skip
+    const/high16 v4, 0x43340000
+    cmpg-float v4, v6, v4
+    if-ltz v4, :vr_back
+    const/high16 v4, 0x42b40000
+    cmpg-float v4, v6, v4
+    if-ltz v4, :vr_front
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u0441\u043f\u0440\u0430\u0432\u0430"
+    goto :voice_say
+    :vr_front
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u0432\u043f\u0435\u0440\u0435\u0434\u0438"
+    goto :voice_say
+    :vr_back
+    const/high16 v4, 0x43870000
+    cmpg-float v4, v6, v4
+    if-ltz v4, :vr_left
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u0441\u0437\u0430\u0434\u0438"
+    goto :voice_say
+    :vr_left
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u0441\u043b\u0435\u0432\u0430"
+    :voice_say
+    invoke-static {}, Lcom/xcglobe/xclog/TtsManager;->getInstance()Lcom/xcglobe/xclog/TtsManager;
+    move-result-object v1
+    invoke-virtual {v1, v0}, Lcom/xcglobe/xclog/TtsManager;->speak(Ljava/lang/String;)V
+    :voice_skip
+
     goto :dw1
     :cr1
     const v7, 0x3f4ccccd
