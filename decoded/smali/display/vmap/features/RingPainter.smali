@@ -904,9 +904,9 @@
 
     div-float v11, v11, v12         # t = age / lifeMs
 
-    const/high16 v12, 0x435c0000    # 220.0
+    const/high16 v12, 0x437f0000    # 255.0
 
-    const/high16 v13, 0x43c80000    # 400.0
+    const/high16 v13, 0x437f0000    # 255.0
 
     mul-float v13, v11, v13         # age/lifeMs * 400
 

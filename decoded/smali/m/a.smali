@@ -70,6 +70,24 @@
 .field public static smoothDist:F = 60f
 .field public static snrFiltered:F = 0f
 
+# Butterworth biquad state (HP+LP cascade per channel)
+.field public static bq_hx1:F = 0f
+.field public static bq_hx2:F = 0f
+.field public static bq_hy1:F = 0f
+.field public static bq_hy2:F = 0f
+.field public static bq_lx1:F = 0f
+.field public static bq_lx2:F = 0f
+.field public static bq_ly1:F = 0f
+.field public static bq_ly2:F = 0f
+.field public static bq_hx1y:F = 0f
+.field public static bq_hx2y:F = 0f
+.field public static bq_hy1y:F = 0f
+.field public static bq_hy2y:F = 0f
+.field public static bq_lx1y:F = 0f
+.field public static bq_lx2y:F = 0f
+.field public static bq_ly1y:F = 0f
+.field public static bq_ly2y:F = 0f
+
 
 # direct methods
 .method static constructor <clinit>()V
