@@ -157,7 +157,11 @@
     goto :goto_0
 
     :goto_1
-    # If NOT in flight mode → release listeners
+    # === Fix #2: blipDebug override — force register even WITHOUT flight mode/barometer ===
+    sget-boolean v0, Lcom/xcglobe/xclog/l;->blipDebug:Z
+    if-eqz v0, :try_register
+
+    # Normal path: если use_barometer (l.I) выключен → release и выход
     sget-boolean v0, Lcom/xcglobe/xclog/l;->I:Z
 
     if-nez v0, :try_register
@@ -166,29 +170,16 @@
     goto :goto_2
 
     :try_register
-    # Early return if already running
+    # === Fix #7: early return if ALREADY running (инверсия if-nez → if-eqz) ===
     sget-boolean v0, Lm/a;->b:Z
 
-    if-nez v0, :check_sensors
+    if-eqz v0, :check_sensors
     return-void
 
     :check_sensors
     sget-boolean v0, Lm/a;->c:Z
 
     if-eqz v0, :cond_2
-
-    sget-object v0, Lm/a;->d:Lm/a$a;
-
-    if-nez v0, :cond_2
-
-    # If blipDebug is ON, force-register sensors (for debug on ground)
-    sget-boolean v0, Lcom/xcglobe/xclog/l;->blipDebug:Z
-
-    if-eqz v0, :continue_reg
-
-    sget-boolean v0, Lm/g;->L:Z
-
-    if-nez v0, :cond_2
 
     :continue_reg
     invoke-static {}, Lcom/xcglobe/xclog/App;->b()Lcom/xcglobe/xclog/App;
@@ -203,15 +194,19 @@
 
     check-cast v0, Landroid/hardware/SensorManager;
 
-    # Register PRESSURE sensor (type 6)
+    move-object v5, v0
+
+    # Try PRESSURE sensor (type 6) — может отсутствовать (LDPlayer)
+    # Если есть — создаём listener и регистрируем
     const/4 v1, 0x6
 
-    invoke-virtual {v0, v1}, Landroid/hardware/SensorManager;->getDefaultSensor(I)Landroid/hardware/Sensor;
+    invoke-virtual {v5, v1}, Landroid/hardware/SensorManager;->getDefaultSensor(I)Landroid/hardware/Sensor;
 
     move-result-object v1
 
-    if-eqz v1, :cond_2
+    if-eqz v1, :try_accel_sensor
 
+    # Есть pressure sensor → создаём listener
     new-instance v2, Lm/a$a;
 
     invoke-direct {v2}, Lm/a$a;-><init>()V
@@ -223,28 +218,62 @@
 
     const/4 v3, 0x3
 
-    invoke-virtual {v0, v2, v1, v3}, Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;I)Z
+    invoke-virtual {v5, v2, v1, v3}, Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;I)Z
 
     move-result v4
 
-    # Save SensorManager reference before v0 could be reused
-    move-object v5, v0
+    if-nez v4, :accel_reg
 
-    if-nez v4, :accel_register        # pressure registered → proceed to accel
-    # Pressure NOT registered → cleanup
+    # Pressure NOT registered → cleanup listener
     const/4 v0, 0x0
 
     sput-object v0, Lm/a;->d:Lm/a$a;
 
-    goto :goto_2
-
-    :accel_register
-    # Pressure registered → mark as started
+    :accel_reg
+    # Mark pressure as started (even if no pressure, for b:Z flag)
     const/4 v0, 0x1
 
     sput-boolean v0, Lm/a;->b:Z
 
-    # Accel no longer registered here — m/a.bAccel() handles it separately
+    :try_accel_sensor
+    # Register for LINEAR_ACCELERATION (type 10) — используем тот же listener
+    # Если listener не создан (нет baro), создаём его сейчас
+    sget-object v2, Lm/a;->d:Lm/a$a;
+
+    if-nez v2, :create_accel_listener
+
+    new-instance v2, Lm/a$a;
+
+    invoke-direct {v2}, Lm/a$a;-><init>()V
+
+    sput-object v2, Lm/a;->d:Lm/a$a;
+
+    :create_accel_listener
+    # Try TYPE_LINEAR_ACCELERATION (type 10), fallback to TYPE_ACCELEROMETER (type 1)
+    const/16 v1, 0xa
+
+    invoke-virtual {v5, v1}, Landroid/hardware/SensorManager;->getDefaultSensor(I)Landroid/hardware/Sensor;
+
+    move-result-object v1
+
+    if-nez v1, :do_register_accel
+
+    const/4 v1, 0x1
+
+    invoke-virtual {v5, v1}, Landroid/hardware/SensorManager;->getDefaultSensor(I)Landroid/hardware/Sensor;
+
+    move-result-object v1
+
+    if-eqz v1, :no_accel_sensor
+
+    :do_register_accel
+    sget-object v2, Lm/a;->d:Lm/a$a;
+
+    const/4 v3, 0x1                # SENSOR_DELAY_GAME
+
+    invoke-virtual {v5, v2, v1, v3}, Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;I)Z
+
+    :no_accel_sensor
     goto :cond_2
 
     :cond_2
@@ -339,6 +368,22 @@
     invoke-static {}, Lm/a;->h()V
 
     :acc_already
+    return-void
+.end method
+
+# === Fix #6: startThermalOnly — регистрация акселерометра независимо от use_barometer ===
+.method public static startThermalOnly()V
+    .locals 2
+
+    sget-boolean v0, Lcom/xcglobe/xclog/l;->blipEnabled:Z
+    if-nez v0, :do_register
+
+    sget-boolean v0, Lcom/xcglobe/xclog/l;->blipDebug:Z
+    if-eqz v0, :do_register
+    return-void
+
+    :do_register
+    invoke-static {}, Lm/a;->bAccel()V
     return-void
 .end method
 

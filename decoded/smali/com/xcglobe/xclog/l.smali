@@ -185,7 +185,7 @@
 .field public static blipEnabled:Z = true
 .field public static blipDebug:Z = true
 
-.field public static blipDemo:Z = false
+.field public static blipDemo:Z = true
 
 # direct methods
 .method static constructor <clinit>()V

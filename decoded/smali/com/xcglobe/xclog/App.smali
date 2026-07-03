@@ -1698,8 +1698,13 @@
 
     invoke-static {}, Lm/g;->a()V
 
+    # Register sensors at startup
+    invoke-static {}, Lm/a;->b()V
+
     # Temporarily disabled — LDPlayer verifier rejects m.a$a
     # invoke-static {}, Lm/a;->bAccel()V
+
+    # invoke-static {}, Lm/a;->startThermalOnly()V
 
     return-void
 .end method

@@ -1,4 +1,6 @@
-.class Lm/a$a;
+import sys
+fn = r"D:\t4\decoded\smali\m\a$a.smali"
+content = '''.class Lm/a$a;
 .super Ljava/lang/Object;
 .implements Landroid/hardware/SensorEventListener;
 
@@ -79,7 +81,7 @@
 .end method
 
 .method private processAccel(Landroid/hardware/SensorEvent;)V
-    .locals 14
+    .locals 16
     sget v9, Lm/a;->accelEventCount:I
     add-int/lit8 v9, v9, 0x1
     sput v9, Lm/a;->accelEventCount:I
@@ -164,7 +166,7 @@
 .end method
 
 .method private updateEnergy(FF)V
-    .locals 12
+    .locals 14
     mul-float v6, p1, p1
     mul-float v7, p2, p2
     add-float v6, v6, v7
@@ -284,14 +286,14 @@
     sput v4, Lm/a;->detStatus:I
     goto :st_s
     :ni1
-    cmpg-float v2, v7, v14
-    if-ltz v2, :nt1
+    cmpg-float v15, v7, v14
+    if-ltz v15, :nt1
     const/4 v4, 0x2
     sput v4, Lm/a;->detStatus:I
     goto :st_s
     :nt1
-    cmpg-float v2, v7, v12
-    if-ltz v2, :ns1
+    cmpg-float v14, v7, v12
+    if-ltz v14, :ns1
     const/4 v4, 0x1
     sput v4, Lm/a;->detStatus:I
     goto :st_s
@@ -300,8 +302,8 @@
     sput v4, Lm/a;->detStatus:I
     sput v4, Lm/a;->aboveThresh:I
     sput-boolean v4, Lm/a;->dirReady:Z
-    const/high16 v8, -0x40800000
-    sput v8, Lcom/xcglobe/xclog/l;->blipAngle:F
+    const/high16 v4, -0x40800000
+    sput v4, Lcom/xcglobe/xclog/l;->blipAngle:F
     sput v4, Lcom/xcglobe/xclog/l;->blipStatus:I
     return-void
     :st_s
@@ -324,24 +326,24 @@
     return-void
     :rdr
     sget v5, Lm/a;->prevBpY:F
-    sget v8, Lm/a;->prevBpX:F
+    sget v4, Lm/a;->prevBpX:F
     float-to-double v0, v5
-    float-to-double v2, v8
+    float-to-double v2, v4
     invoke-static {v0, v1, v2, v3}, Ljava/lang/Math;->atan2(DD)D
     move-result-wide v0
-    const-wide v10, 0x404ca5dc1a63c1f8L
-    mul-double v0, v0, v10
+    const-wide v8, 0x404ca5dc1a63c1f8L
+    mul-double v0, v0, v8
     double-to-float v6, v0
-    const/high16 v8, 0x43b40000
-    const/high16 v9, 0x0
-    cmpg-float v9, v6, v9
-    if-ltz v9, :nn2
-    add-float/2addr v6, v8
+    const/high16 v4, 0x43b40000
+    const/4 v3, 0x0
+    cmpg-float v3, v6, v3
+    if-ltz v3, :nn1
+    add-float/2addr v6, v4
+    :nn1
+    cmpg-float v3, v6, v4
+    if-ltz v3, :nn2
+    sub-float/2addr v6, v4
     :nn2
-    cmpg-float v9, v6, v8
-    if-ltz v9, :nn3
-    sub-float/2addr v6, v8
-    :nn3
     sput v6, Lm/a;->turbDir:F
     sget v4, Lm/a;->confirmCount:I
     const/4 v3, 0x5
@@ -350,15 +352,15 @@
     :ac1
     sget-boolean v4, Lm/a;->hasBlip:Z
     if-eqz v4, :sar
-    sget v12, Lm/a;->lastAngle:F
-    sub-float v8, v6, v12
+    sget v4, Lm/a;->lastAngle:F
+    sub-float v8, v6, v4
     invoke-static {v8}, Ljava/lang/Math;->abs(F)F
     move-result v8
     const/high16 v9, 0x43340000
     cmpg-float v4, v8, v9
     if-ltz v4, :ad1
-    const/high16 v12, 0x43b40000
-    sub-float v8, v12, v8
+    const/high16 v4, 0x43b40000
+    sub-float v8, v4, v8
     :ad1
     const/high16 v9, 0x42340000
     cmpg-float v4, v8, v9
@@ -416,15 +418,13 @@
     goto :sv1
     :vr1
     sget v4, Lm/a;->confirmHalf:I
-    int-to-float v13, v4
     sget v8, Lm/a;->confirmSum1:F
-    div-float/2addr v8, v13
+    div-float/2addr v8, v4
     sget v4, Lm/a;->confirmTarget:I
-    sget v13, Lm/a;->confirmHalf:I
-    sub-int/2addr v4, v13
-    int-to-float v13, v4
+    sget v9, Lm/a;->confirmHalf:I
+    sub-int/2addr v4, v9
     sget v9, Lm/a;->confirmSum2:F
-    div-float v9, v9, v13
+    div-float v9, v9, v4
     const v7, 0x3f99999a
     mul-float v7, v8, v7
     cmpg-float v10, v9, v7
@@ -454,8 +454,8 @@
     sput-boolean v3, Lm/a;->dirReady:Z
     sput v3, Lm/a;->aboveThresh:I
     sput v3, Lm/a;->detStatus:I
-    const/high16 v8, -0x40800000
-    sput v8, Lcom/xcglobe/xclog/l;->blipAngle:F
+    const/high16 v4, -0x40800000
+    sput v4, Lcom/xcglobe/xclog/l;->blipAngle:F
     sput v3, Lcom/xcglobe/xclog/l;->blipStatus:I
     return-void
     :ud1
@@ -555,3 +555,8 @@
     :so1
     return-void
 .end method
+'''
+
+with open(fn, 'w') as f:
+    f.write(content)
+print(f"Wrote {len(content.splitlines())} lines to {fn}")
