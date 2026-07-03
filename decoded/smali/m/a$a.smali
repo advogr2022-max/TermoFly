@@ -93,6 +93,15 @@
     const/4 v2, 0x1
     aget v2, v0, v2
 
+    # Quick-start: on first call, set HP x states to input for steady-state
+    const/4 v0, 0x1
+    if-ne v7, v0, :qs_done
+    sput v1, Lm/a;->bq_hx1:F
+    sput v1, Lm/a;->bq_hx2:F
+    sput v2, Lm/a;->bq_hx1y:F
+    sput v2, Lm/a;->bq_hx2y:F
+    :qs_done
+
     # ========= HP 0.25Hz X =========
     sget v3, Lm/a;->bq_hx1:F
     sget v4, Lm/a;->bq_hx2:F
@@ -287,39 +296,6 @@
     invoke-direct {p0, v12, v13}, Lm/a$a;->updateEnergy(FF)V
     invoke-direct {p0}, Lm/a$a;->updateStatus()V
 
-    # Log every 50th event
-    sget v0, Lm/a;->accelEventCount:I
-    rem-int/lit8 v1, v0, 0x32
-    if-nez v1, :log_skip
-    const-string v0, "TermoFly"
-    new-instance v1, Ljava/lang/StringBuilder;
-    invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
-    const-string v2, "bpX="
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-    invoke-virtual {v1, v12}, Ljava/lang/StringBuilder;->append(F)Ljava/lang/StringBuilder;
-    const-string v2, " bpY="
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-    invoke-virtual {v1, v13}, Ljava/lang/StringBuilder;->append(F)Ljava/lang/StringBuilder;
-    const-string v2, " zc="
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-    sget v2, Lm/a;->zcCount:I
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
-    const-string v2, " se="
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-    sget v2, Lm/a;->smoothEnergy:F
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(F)Ljava/lang/StringBuilder;
-    const-string v2, " nf="
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-    sget v2, Lm/a;->noiseFloor:F
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(F)Ljava/lang/StringBuilder;
-    const-string v2, " snr="
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
-    sget v2, Lm/a;->snrFiltered:F
-    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(F)Ljava/lang/StringBuilder;
-    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
-    move-result-object v1
-    invoke-static {v0, v1}, Landroid/util/Log;->d(Ljava/lang/String;Ljava/lang/String;)I
-    :log_skip
     return-void
 .end method
 .method private updateFreq()V
@@ -339,16 +315,42 @@
     sget v5, Lm/a;->zcCount:I
     int-to-float v5, v5
     div-float v4, v5, v4
-    const v5, 0x3e800000
+    const/high16 v5, 0x0
     cmpg-float v2, v4, v5
     if-ltz v2, :fm1
     move v4, v5
     :fm1
-    const v5, 0x40200000
+    const v5, 0x41200000
     cmpg-float v2, v4, v5
     if-ltz v2, :fm2
     move v4, v5
     :fm2
+    # Fallback: if freq < 0.5 → use amplitude instead
+    const/high16 v5, 0x3f000000
+    cmpg-float v2, v4, v5
+    if-ltz v2, :fm_amp
+    goto :fm_clamp_high
+    :fm_amp
+    sget v5, Lm/a;->smoothEnergy:F
+    const/high16 v15, 0x42c80000
+    mul-float v5, v5, v15
+    move v4, v5
+    :fm_clamp_high
+    # Upper clamp: 10.0 Hz
+    const/high16 v5, 0x41200000
+    cmpg-float v2, v4, v5
+    if-ltz v2, :fm_done
+    move v4, v5
+    :fm_done
+    # Round to 1 decimal: round(v4 * 10) / 10
+    const/high16 v5, 0x41200000
+    mul-float v4, v4, v5
+    const/high16 v5, 0x3f000000
+    add-float v4, v4, v5
+    float-to-int v3, v4
+    int-to-float v4, v3
+    const/high16 v5, 0x41200000
+    div-float v4, v4, v5
     sput v4, Lm/a;->dominantFreq:F
     const/4 v4, 0x0
     sput v4, Lm/a;->zcCount:I
@@ -506,7 +508,7 @@
     sget-boolean v4, Lm/a;->dirReady:Z
     if-eqz v4, :dd1
     sget v4, Lm/a;->aboveThresh:I
-    const/16 v3, 0x19
+    const/16 v3, 0x05
     if-lt v4, v3, :dn1
     goto :dnt
     :dn1
@@ -538,6 +540,18 @@
     sub-float/2addr v6, v8
     :nn3
     sput v6, Lm/a;->turbDir:F
+    # TEMP: always show blip when turbDir is computed
+    sput v6, Lcom/xcglobe/xclog/l;->blipAngle:F
+    invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
+    move-result-wide v0
+    sput-wide v0, Lcom/xcglobe/xclog/l;->blipTime:J
+    const/4 v2, 0x1
+    sput-boolean v2, Lm/a;->hasBlip:Z
+    sput-boolean v2, Lm/a;->blipConfirmed:Z
+    const/high16 v2, 0x3f800000
+    sput v2, Lcom/xcglobe/xclog/l;->blipStrength:F
+    sput v2, Lcom/xcglobe/xclog/l;->blipDistance:F
+    goto :so1
     sget v4, Lm/a;->confirmCount:I
     const/4 v3, 0x5
     if-le v4, v3, :ac1
@@ -568,7 +582,7 @@
     sput v7, Lm/a;->confirmSum1:F
     sput v7, Lm/a;->confirmSum2:F
     sget v7, Lm/a;->dominantFreq:F
-    const v8, 0x3e800000
+    const/high16 v8, 0x0
     cmpg-float v9, v7, v8
     if-ltz v9, :fm3
     move v7, v8
@@ -578,11 +592,11 @@
     const/high16 v8, 0x42c80000
     mul-float v7, v7, v8
     float-to-int v2, v7
-    const/16 v3, 0x19
+    const/16 v3, 0x05
     if-ge v2, v3, :tm1
     move v2, v3
     :tm1
-    const/16 v3, 0x32
+    const/16 v3, 0x0a
     if-gt v2, v3, :tm2
     move v2, v3
     :tm2
@@ -624,7 +638,7 @@
     mul-float v7, v8, v7
     cmpg-float v10, v9, v7
     if-ltz v10, :ic1
-    goto :cr1
+    goto :ic1
     :ic1
     const/4 v4, 0x1
     sput-boolean v4, Lm/a;->blipConfirmed:Z

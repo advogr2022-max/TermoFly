@@ -547,7 +547,7 @@
 
     const-string v1, "blip_debug"
 
-    const/4 v2, 0x0
+    const/4 v2, 0x1
 
     invoke-interface {v0, v1, v2}, Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z
 
@@ -555,8 +555,10 @@
 
     sput-boolean v3, Lcom/xcglobe/xclog/l;->blipDebug:Z
 
-    # Read blip_demo from prefs (v0 still has SharedPreferences)
+    # Read blip_demo from prefs
     const-string v1, "blip_demo"
+
+    const/4 v2, 0x0
 
     invoke-interface {v0, v1, v2}, Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z
 
@@ -729,7 +731,91 @@
 .method public static drawBlips(Landroid/graphics/Canvas;)V
     .locals 14
 
-    # === Fix #4: blipDemo — синтетический blip при любом движении ===
+
+    # === TEST: single blip, 7s cycle, 6s fade ===
+    invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
+    move-result-wide v2
+    const-wide/16 v4, 0x32c8
+    div-long v6, v2, v4
+    mul-long v6, v6, v4
+    sub-long v6, v2, v6
+    long-to-int v0, v6
+    # v0 = position in 13s cycle
+    const/16 v1, 0x1b58
+    if-lt v0, v1, :t_done
+    sub-int v0, v0, v1
+    int-to-float v8, v0
+    const v9, 0x45bb8000
+    div-float v8, v8, v9
+    # v8 = age/6000
+    const/high16 v9, 0x437f0000
+    sub-float v8, v9, v8
+    float-to-int v1, v8
+    # v1 = alpha (255 -> 0 over 6s)
+    # Cycle: (now/13000) % 3
+    const-wide/16 v4, 0x32c8
+    div-long v6, v2, v4
+    long-to-int v6, v6
+    const/4 v7, 0x3
+    rem-int v6, v6, v7
+    # v6 = 0=big(40)/1=med(30)/2=small(20)
+    if-eqz v6, :t_big
+    const/4 v7, 0x1
+    if-eq v6, v7, :t_med
+    # small: dist=0.8, r=20
+    const v0, 0x3f4ccccd
+    const/high16 v10, 0x41a00000
+    goto :t_draw
+    :t_med
+    # medium: dist=0.6, r=30
+    const v0, 0x3f19999a
+    const/high16 v10, 0x41f00000
+    goto :t_draw
+    :t_big
+    # big: dist=0.4, r=40
+    const v0, 0x3ecccccd
+    const/high16 v10, 0x42200000
+    :t_draw
+    const-wide/16 v4, 0x32c8
+    div-long v6, v2, v4
+    long-to-int v6, v6
+    int-to-float v6, v6
+    const/high16 v7, 0x41f00000
+    mul-float v6, v6, v7
+    # v6 = angle_deg = cycle * 30
+    float-to-double v2, v6
+    invoke-static {v2, v3}, Ljava/lang/Math;->sin(D)D
+    move-result-wide v2
+    double-to-float v8, v2
+    float-to-double v2, v6
+    invoke-static {v2, v3}, Ljava/lang/Math;->cos(D)D
+    move-result-wide v2
+    double-to-float v6, v2
+    sget v2, Ldisplay/vmap/features/RingPainter;->ringCenterX:I
+    int-to-float v2, v2
+    sget v3, Ldisplay/vmap/features/RingPainter;->ringR:I
+    int-to-float v3, v3
+    mul-float v3, v3, v0
+    mul-float v3, v3, v8
+    add-float v8, v2, v3
+    sget v2, Ldisplay/vmap/features/RingPainter;->ringCenterY:I
+    int-to-float v2, v2
+    sget v3, Ldisplay/vmap/features/RingPainter;->ringR:I
+    int-to-float v3, v3
+    mul-float v3, v3, v0
+    mul-float v3, v3, v6
+    sub-float v6, v2, v3
+    sget-object v0, Ldisplay/vmap/features/RingPainter;->paintCircles:Landroid/graphics/Paint;
+    const v2, 0xffffc107
+    invoke-virtual {v0, v2}, Landroid/graphics/Paint;->setColor(I)V
+    sget-object v2, Landroid/graphics/Paint$Style;->FILL:Landroid/graphics/Paint$Style;
+    invoke-virtual {v0, v2}, Landroid/graphics/Paint;->setStyle(Landroid/graphics/Paint$Style;)V
+    invoke-virtual {v0, v1}, Landroid/graphics/Paint;->setAlpha(I)V
+    invoke-virtual {p0, v8, v6, v10, v0}, Landroid/graphics/Canvas;->drawCircle(FFFLandroid/graphics/Paint;)V
+    :t_done
+    # === END TEST ===
+
+# === Fix #4: blipDemo — синтетический blip при любом движении ===
     sget-boolean v0, Lcom/xcglobe/xclog/l;->blipDemo:Z
     if-eqz v0, :check_real
 
