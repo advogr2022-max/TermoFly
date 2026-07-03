@@ -769,7 +769,7 @@
 
     cmpl-float v2, v0, v1
 
-    if-nez v2, :skip
+    if-eqz v2, :skip
 
     invoke-static {}, Ljava/lang/System;->currentTimeMillis()J
 

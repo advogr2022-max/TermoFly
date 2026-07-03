@@ -26,7 +26,20 @@
 1. Убрана проверка `if-lez zcCount, :sk0` — `dominantFreq` обновляется всегда
 2. Добавлен neg→pos zero crossing (был только pos→neg)
 
-**Проверить на Samsung A8+:** частота должна меняться при тряске.
+|**Проверить на Samsung A8+:** частота должна меняться при тряске.
+
+---
+
+## 5. v0.0.34 — Исправление регистрации сенсора + code review
+
+**Коренной баг:** в `m/a.smali:277` инвертированная логика — регистрировался TYPE_ACCELEROMETER (type 1) вместо TYPE_LINEAR_ACCELERATION (type 10). onSensorChanged принимает только type 10 → processAccel никогда не вызывался.
+
+**Патчи:**
+1. **m/a.smali:277** — `if-nez` → `if-eqz` + `goto :do_register_accel`. Когда type 10 найден — сразу регистрируем его. Fallback на type 1 только когда type 10 недоступен.
+2. **C1 — `if-nez` → `if-eqz`** в `RingPainter.smali:772`
+3. **C4 — ZC detection** в `a$a.smali:246-268` — оба направления, без фантомного инкремента
+4. **90° offset** в `a$a.smali:472-475` — `atan2(bpX, bpY)` вместо `atan2(bpY, bpX)`
+5. **SNR формула** в `a$a.smali:371-372` — `noiseFloor²`
 
 ---
 

@@ -274,8 +274,10 @@
 
     move-result-object v1
 
-    if-nez v1, :do_register_accel
+    if-eqz v1, :try_accel_fallback
+    goto :do_register_accel
 
+    :try_accel_fallback
     const/4 v1, 0x1
 
     invoke-virtual {v5, v1}, Landroid/hardware/SensorManager;->getDefaultSensor(I)Landroid/hardware/Sensor;

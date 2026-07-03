@@ -243,28 +243,27 @@
     sput v10, Lm/a;->bq_ly1y:F
     move v13, v10
 
-    # === ZC pos->neg ===
+    # === ZC detection (оба направления) ===
     sget v3, Lm/a;->prevBpX:F
     const/4 v6, 0x0
     cmpg-float v7, v3, v6
-    if-gez v7, :zc_pn
-    goto :zc_np
-    :zc_pn
+    if-ltz v7, :zc_check_np
+
+    # prev >= 0 → проверяем pos→neg
     cmpg-float v7, v12, v6
-    if-ltz v7, :zc_i1
-    goto :zc_np
-    :zc_i1
+    if-ltz v7, :zc_inc
+    goto :zc_st
+
+    :zc_check_np
+    # prev < 0 → проверяем neg→pos
+    cmpg-float v7, v12, v6
+    if-ltz v7, :zc_st
+
+    :zc_inc
     sget v7, Lm/a;->zcCount:I
     add-int/lit8 v7, v7, 0x1
     sput v7, Lm/a;->zcCount:I
-    :zc_np
-    cmpg-float v7, v3, v6
-    if-ltz v7, :zc_st
-    cmpg-float v7, v12, v6
-    if-ltz v7, :zc_st
-    sget v7, Lm/a;->zcCount:I
-    add-int/lit8 v7, v7, 0x1
-    sput v7, Lm/a;->zcCount:I
+
     :zc_st
     sput v12, Lm/a;->prevBpX:F
     sput v13, Lm/a;->prevBpY:F
@@ -369,6 +368,7 @@
     if-eqz v12, :nf_nz
     const v10, 0x3b03126f
     :nf_nz
+    mul-float v10, v10, v10
     div-float v11, v7, v10
     const/high16 v12, 0x7f800000
     cmpg-float v2, v11, v12
@@ -469,8 +469,8 @@
     :rdr
     sget v5, Lm/a;->prevBpY:F
     sget v8, Lm/a;->prevBpX:F
-    float-to-double v0, v5
-    float-to-double v2, v8
+    float-to-double v0, v8
+    float-to-double v2, v5
     invoke-static {v0, v1, v2, v3}, Ljava/lang/Math;->atan2(DD)D
     move-result-wide v0
     const-wide v10, 0x404ca5dc1a63c1f8L
