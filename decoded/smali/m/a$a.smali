@@ -31,6 +31,8 @@
     if-eq v1, v2, :baro
     const/16 v2, 0xa
     if-eq v1, v2, :accel
+    const/4 v2, 0x1
+    if-eq v1, v2, :accel
     return-void
     :baro
     invoke-direct {p0, v0}, Lm/a$a;->processBaro(Landroid/hardware/SensorEvent;)V
@@ -243,23 +245,37 @@
     sput v10, Lm/a;->bq_ly1y:F
     move v13, v10
 
-    # === ZC detection (оба направления) ===
+    # === ZC detection (обе оси, оба направления) ===
     sget v3, Lm/a;->prevBpX:F
     const/4 v6, 0x0
     cmpg-float v7, v3, v6
-    if-ltz v7, :zc_check_np
-
-    # prev >= 0 → проверяем pos→neg
+    if-ltz v7, :zc_x_np
+    # prevX >= 0 → pos→neg check
     cmpg-float v7, v12, v6
-    if-ltz v7, :zc_inc
+    if-ltz v7, :zc_x_inc
+    goto :zc_y_check
+    :zc_x_np
+    # prevX < 0 → neg→pos check
+    cmpg-float v7, v12, v6
+    if-ltz v7, :zc_y_check
+    :zc_x_inc
+    sget v7, Lm/a;->zcCount:I
+    add-int/lit8 v7, v7, 0x1
+    sput v7, Lm/a;->zcCount:I
+
+    :zc_y_check
+    sget v3, Lm/a;->prevBpY:F
+    cmpg-float v7, v3, v6
+    if-ltz v7, :zc_y_np
+    # prevY >= 0 → pos→neg check
+    cmpg-float v7, v13, v6
+    if-ltz v7, :zc_y_inc
     goto :zc_st
-
-    :zc_check_np
-    # prev < 0 → проверяем neg→pos
-    cmpg-float v7, v12, v6
+    :zc_y_np
+    # prevY < 0 → neg→pos check
+    cmpg-float v7, v13, v6
     if-ltz v7, :zc_st
-
-    :zc_inc
+    :zc_y_inc
     sget v7, Lm/a;->zcCount:I
     add-int/lit8 v7, v7, 0x1
     sput v7, Lm/a;->zcCount:I
@@ -270,6 +286,40 @@
     invoke-direct {p0}, Lm/a$a;->updateFreq()V
     invoke-direct {p0, v12, v13}, Lm/a$a;->updateEnergy(FF)V
     invoke-direct {p0}, Lm/a$a;->updateStatus()V
+
+    # Log every 50th event
+    sget v0, Lm/a;->accelEventCount:I
+    rem-int/lit8 v1, v0, 0x32
+    if-nez v1, :log_skip
+    const-string v0, "TermoFly"
+    new-instance v1, Ljava/lang/StringBuilder;
+    invoke-direct {v1}, Ljava/lang/StringBuilder;-><init>()V
+    const-string v2, "bpX="
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v1, v12}, Ljava/lang/StringBuilder;->append(F)Ljava/lang/StringBuilder;
+    const-string v2, " bpY="
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v1, v13}, Ljava/lang/StringBuilder;->append(F)Ljava/lang/StringBuilder;
+    const-string v2, " zc="
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    sget v2, Lm/a;->zcCount:I
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(I)Ljava/lang/StringBuilder;
+    const-string v2, " se="
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    sget v2, Lm/a;->smoothEnergy:F
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(F)Ljava/lang/StringBuilder;
+    const-string v2, " nf="
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    sget v2, Lm/a;->noiseFloor:F
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(F)Ljava/lang/StringBuilder;
+    const-string v2, " snr="
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    sget v2, Lm/a;->snrFiltered:F
+    invoke-virtual {v1, v2}, Ljava/lang/StringBuilder;->append(F)Ljava/lang/StringBuilder;
+    invoke-virtual {v1}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v1
+    invoke-static {v0, v1}, Landroid/util/Log;->d(Ljava/lang/String;Ljava/lang/String;)I
+    :log_skip
     return-void
 .end method
 .method private updateFreq()V
@@ -400,6 +450,7 @@
     return-void
     :st_ct
     sget v10, Lm/a;->noiseFloor:F
+    mul-float v10, v10, v10
     const v12, 0x3c75c28f
     const/high16 v13, 0x40400000
     mul-float v13, v10, v13
@@ -531,7 +582,7 @@
     if-ge v2, v3, :tm1
     move v2, v3
     :tm1
-    const/16 v3, 0xfa
+    const/16 v3, 0x32
     if-gt v2, v3, :tm2
     move v2, v3
     :tm2
