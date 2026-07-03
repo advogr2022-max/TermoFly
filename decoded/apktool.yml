@@ -12,8 +12,8 @@ packageInfo:
   forcedPackageId: 127
   renameManifestPackage: com.xcglobe.termofly
 versionInfo:
-  versionCode: '37'
-  versionName: 0.0.37
+  versionCode: '38'
+  versionName: 0.0.38
 sharedLibrary: false
 sparseResources: false
 compactEntries: false

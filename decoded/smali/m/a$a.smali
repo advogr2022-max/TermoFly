@@ -108,18 +108,18 @@
     sget v5, Lm/a;->bq_hy1:F
     sget v6, Lm/a;->bq_hy2:F
 
-    const v10, 0x3f7fc5cb
+    const v10, 0x3f7a6035
     mul-float v10, v10, v1
-    const v11, 0xbfffc5cb
+    const v11, 0xbffa6035
     mul-float v11, v11, v3
     add-float v10, v10, v11
-    const v11, 0x3f7fc5cb
+    const v11, 0x3f7a6035
     mul-float v11, v11, v4
     add-float v10, v10, v11
-    const v11, 0xbfffc5c4
+    const v11, 0xbffa5063
     mul-float v11, v11, v5
     sub-float v10, v10, v11
-    const v11, 0x3f7f8ba3
+    const v11, 0x3f74e00c
     mul-float v11, v11, v6
     sub-float v10, v10, v11
 
@@ -146,18 +146,18 @@
     sget v5, Lm/a;->bq_ly1:F
     sget v6, Lm/a;->bq_ly2:F
 
-    const v10, 0x3e5387a2
+    const v10, 0x3ca485df
     mul-float v10, v10, v8
-    const v11, 0x3ed387a2
+    const v11, 0x3d2485df
     mul-float v11, v11, v3
     add-float v10, v10, v11
-    const v11, 0x3e5387a2
+    const v11, 0x3ca485df
     mul-float v11, v11, v4
     add-float v10, v10, v11
-    const v11, 0xbebd32b1
+    const v11, 0xbfc7cf71
     mul-float v11, v11, v5
     sub-float v10, v10, v11
-    const v11, 0x3e4883ea
+    const v11, 0x3f242f9d
     mul-float v11, v11, v6
     sub-float v10, v10, v11
 
@@ -184,18 +184,18 @@
     sget v5, Lm/a;->bq_hy1y:F
     sget v6, Lm/a;->bq_hy2y:F
 
-    const v10, 0x3f7fc5cb
+    const v10, 0x3f7a6035
     mul-float v10, v10, v2
-    const v11, 0xbfffc5cb
+    const v11, 0xbffa6035
     mul-float v11, v11, v3
     add-float v10, v10, v11
-    const v11, 0x3f7fc5cb
+    const v11, 0x3f7a6035
     mul-float v11, v11, v4
     add-float v10, v10, v11
-    const v11, 0xbfffc5c4
+    const v11, 0xbffa5063
     mul-float v11, v11, v5
     sub-float v10, v10, v11
-    const v11, 0x3f7f8ba3
+    const v11, 0x3f74e00c
     mul-float v11, v11, v6
     sub-float v10, v10, v11
 
@@ -222,18 +222,18 @@
     sget v5, Lm/a;->bq_ly1y:F
     sget v6, Lm/a;->bq_ly2y:F
 
-    const v10, 0x3e5387a2
+    const v10, 0x3ca485df
     mul-float v10, v10, v9
-    const v11, 0x3ed387a2
+    const v11, 0x3d2485df
     mul-float v11, v11, v3
     add-float v10, v10, v11
-    const v11, 0x3e5387a2
+    const v11, 0x3ca485df
     mul-float v11, v11, v4
     add-float v10, v10, v11
-    const v11, 0xbebd32b1
+    const v11, 0xbfc7cf71
     mul-float v11, v11, v5
     sub-float v10, v10, v11
-    const v11, 0x3e4883ea
+    const v11, 0x3f242f9d
     mul-float v11, v11, v6
     sub-float v10, v10, v11
 
