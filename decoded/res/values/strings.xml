@@ -25,6 +25,8 @@
     <string name="voice_enabled_desc">Speak thermal direction when detected</string>
     <string name="blip_demo">Demo blips</string>
     <string name="blip_demo_desc">Show blip on any motion (ignores thermal detection)</string>
+    <string name="lp_cutoff">LP filter cutoff</string>
+    <string name="lp_cutoff_desc">Low-pass Butterworth cutoff (2.0-25.0 Hz). Default 2.5. For ground testing set higher.</string>
     <string name="ar_car">Car driving</string>
     <string name="ar_default">Default</string>
     <string name="ar_device_default">Device default</string>

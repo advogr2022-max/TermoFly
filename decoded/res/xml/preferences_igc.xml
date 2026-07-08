@@ -15,5 +15,6 @@
         <CheckBoxPreference android:title="@string/blip_debug" android:key="blip_debug" android:summary="@string/blip_debug_desc" android:defaultValue="true" />
         <CheckBoxPreference android:title="@string/voice_enabled" android:key="voice_enabled" android:summary="@string/voice_enabled_desc" android:defaultValue="false" />
         <CheckBoxPreference android:title="@string/blip_demo" android:key="blip_demo" android:summary="@string/blip_demo_desc" android:defaultValue="true" />
+        <EditTextPreference android:digits="01234567890." android:title="@string/lp_cutoff" android:key="lp_cutoff" android:summary="@string/lp_cutoff_desc" android:defaultValue="2.5" android:inputType="numberDecimal" />
     </PreferenceCategory>
 </PreferenceScreen>

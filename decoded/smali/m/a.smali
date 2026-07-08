@@ -88,6 +88,18 @@
 .field public static bq_ly1y:F = 0f
 .field public static bq_ly2y:F = 0f
 
+# Dynamic LP Butterworth coefficients (computed from lpCutoff)
+.field public static lpCutoff:F = 2.5f
+.field public static lpB0:F = 0.02008337f
+.field public static lpB1:F = 0.04016673f
+.field public static lpB2:F = 0.02008337f
+.field public static lpA1:F = -1.561018f
+.field public static lpA2:F = 0.6413515f
+
+.field public static loggerRun:Z = false
+
+.field public static lastIgcName:Ljava/lang/String; = null
+
 
 # direct methods
 .method static constructor <clinit>()V
@@ -222,7 +234,7 @@
 
     move-result-object v1
 
-    if-eqz v1, :try_accel_sensor
+    if-eqz v1, :cond_2
 
     # Есть pressure sensor → создаём listener
     new-instance v2, Lm/a$a;
@@ -248,52 +260,12 @@
     sput-object v0, Lm/a;->d:Lm/a$a;
 
     :accel_reg
-    # Mark pressure as started (even if no pressure, for b:Z flag)
+    # Mark pressure as started
     const/4 v0, 0x1
 
     sput-boolean v0, Lm/a;->b:Z
 
-    :try_accel_sensor
-    # Register for LINEAR_ACCELERATION (type 10) — используем тот же listener
-    # Если listener не создан (нет baro), создаём его сейчас
-    sget-object v2, Lm/a;->d:Lm/a$a;
-
-    if-nez v2, :create_accel_listener
-
-    new-instance v2, Lm/a$a;
-
-    invoke-direct {v2}, Lm/a$a;-><init>()V
-
-    sput-object v2, Lm/a;->d:Lm/a$a;
-
-    :create_accel_listener
-    # Try TYPE_LINEAR_ACCELERATION (type 10), fallback to TYPE_ACCELEROMETER (type 1)
-    const/16 v1, 0xa
-
-    invoke-virtual {v5, v1}, Landroid/hardware/SensorManager;->getDefaultSensor(I)Landroid/hardware/Sensor;
-
-    move-result-object v1
-
-    if-eqz v1, :try_accel_fallback
-    goto :do_register_accel
-
-    :try_accel_fallback
-    const/4 v1, 0x1
-
-    invoke-virtual {v5, v1}, Landroid/hardware/SensorManager;->getDefaultSensor(I)Landroid/hardware/Sensor;
-
-    move-result-object v1
-
-    if-eqz v1, :no_accel_sensor
-
-    :do_register_accel
-    sget-object v2, Lm/a;->d:Lm/a$a;
-
-    const v3, 0x4e20                # 20000us = 50Hz
-
-    invoke-virtual {v5, v2, v1, v3}, Landroid/hardware/SensorManager;->registerListener(Landroid/hardware/SensorEventListener;Landroid/hardware/Sensor;I)Z
-
-    :no_accel_sensor
+    # Accel NOT registered here — separate listener f handles accel via bAccel()
     goto :cond_2
 
     :cond_2
@@ -514,6 +486,11 @@
 
     sput v0, Lm/a;->accelEventCount:I
 
+    # Stop sensor logging
+    invoke-static {}, Lcom/xcglobe/xclog/TermoFlyLogger;->getInstance()Lcom/xcglobe/xclog/TermoFlyLogger;
+    move-result-object v0
+    invoke-virtual {v0}, Lcom/xcglobe/xclog/TermoFlyLogger;->stopLogging()V
+
     return-void
 .end method
 
@@ -599,6 +576,8 @@
     const/high16 v0, 0x3f800000    # 1.0f
 
     sput v0, Lm/a;->dominantFreq:F
+
+    const/16 v0, 0x32
 
     sput v0, Lm/a;->confirmTarget:I
 

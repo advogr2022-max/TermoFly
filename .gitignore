@@ -20,6 +20,8 @@ cmdline-tools.zip
 logs/
 tmp/
 *.igc
+*.csv
+*.tmp
 
 # Other generated / unwanted
 decoded_manifest/

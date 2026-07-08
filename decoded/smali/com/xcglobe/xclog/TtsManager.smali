@@ -149,16 +149,11 @@
 
     sub-long v2, v0, v2
 
-    const-wide/16 v4, 0x1f40
+    const-wide/16 v4, 0x0fa0
 
     cmp-long v2, v2, v4
 
-    if-gez v2, :cond_1
-    iget-object v2, p0, Lcom/xcglobe/xclog/TtsManager;->lastPhrase:Ljava/lang/String;
-    invoke-virtual {p1, v2}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-    move-result v2
-    if-eqz v2, :cond_1
-    return-void
+    if-ltz v2, :cond_5
 
     :cond_1
     iput-object p1, p0, Lcom/xcglobe/xclog/TtsManager;->lastPhrase:Ljava/lang/String;

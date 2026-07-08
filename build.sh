@@ -10,7 +10,7 @@ source env.sh
 
 # Current version from apktool.yml
 CUR_VER_NAME=$(grep versionName decoded/apktool.yml | sed 's/.*versionName: //')
-CUR_VER_CODE=$(grep versionCode decoded/apktool.yml | sed 's/.*versionCode: //')
+CUR_VER_CODE=$(grep versionCode decoded/apktool.yml | sed "s/.*versionCode: *'//; s/'//; s/.*versionCode: *//")
 NEW_VER_CODE=$((CUR_VER_CODE + 1))
 
 # If new version name provided, update
@@ -36,10 +36,10 @@ echo "=== zipalign ==="
 "$BUILD_TOOLS/zipalign" -f -v 4 "$APK_UNSIGNED" "$APK_ALIGNED" 2>&1 | tail -2
 
 echo "=== Sign ==="
-cmd //c "c:\t4\android-sdk\build-tools\34.0.0\apksigner.bat sign --ks c:\t4\keystore\debug.keystore --ks-key-alias devkey --ks-pass pass:android --key-pass pass:android --out c:\t4\$APK_NAME c:\t4\$APK_ALIGNED"
+java -jar "$BUILD_TOOLS/lib/apksigner.jar" sign --ks "/c/t4/keystore/debug.keystore" --ks-key-alias devkey --ks-pass pass:android --key-pass pass:android --out "$APK_NAME" "$APK_ALIGNED"
 
 echo "=== Verify ==="
-cmd //c "c:\t4\android-sdk\build-tools\34.0.0\apksigner.bat verify --verbose c:\t4\$APK_NAME" 2>&1 | grep "Verifies\|Verified"
+java -jar "$BUILD_TOOLS/lib/apksigner.jar" verify --verbose "$APK_NAME" 2>&1 | grep "Verifies\|Verified"
 
 echo "=== Done ==="
 ls -la "$APK_NAME"

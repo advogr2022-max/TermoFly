@@ -579,6 +579,8 @@
     # Read enable_blip from prefs
     const-string v1, "enable_blip"
 
+    const/4 v2, 0x1
+
     invoke-interface {v0, v1, v2}, Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z
 
     move-result v3
@@ -588,7 +590,7 @@
     # Read voice_enabled from prefs
     const-string v1, "voice_enabled"
 
-    const/4 v2, 0x0
+    const/4 v2, 0x1
 
     invoke-interface {v0, v1, v2}, Landroid/content/SharedPreferences;->getBoolean(Ljava/lang/String;Z)Z
 
@@ -601,7 +603,7 @@
 
     if-eqz v0, :dbg_end
 
-    invoke-static {}, Lm/a;->b()V
+    # REMOVED: invoke-static {}, Lm/a;->b()V — reset vario smoother every frame
 
     # Temporarily disabled — LDPlayer verifier rejects m.a$a
     # invoke-static {}, Lm/a;->bAccel()V
@@ -757,7 +759,7 @@
     :check_real
     sget-boolean v0, Lcom/xcglobe/xclog/l;->blipEnabled:Z
 
-    if-nez v0, :skip
+    if-eqz v0, :skip
 
     sget v0, Lcom/xcglobe/xclog/l;->blipAngle:F
 
@@ -878,11 +880,11 @@
     # radius = max(4f, strength * 1.5f)
     sget v10, Lcom/xcglobe/xclog/l;->blipStrength:F
 
-    const/high16 v11, 0x3fc00000    # 1.5
+    const/high16 v11, 0x40400000    # 3.0 (×2 от 1.5)
 
     mul-float v10, v10, v11
 
-    const/high16 v11, 0x40800000    # 4.0
+    const/high16 v11, 0x41000000    # 8.0 (×2 от 4.0)
 
     cmpg-float v12, v10, v11         # v10=radius, v11=4.0
     if-ltz v12, :r_min               # radius < 4 → clamp

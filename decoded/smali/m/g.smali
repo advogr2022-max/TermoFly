@@ -1210,6 +1210,13 @@
 
     invoke-static {p0}, Lcom/xcglobe/xclog/ActivityMain;->a(I)V
 
+    # Stop sensor logger + allow restart on next recording
+    invoke-static {}, Lcom/xcglobe/xclog/TermoFlyLogger;->getInstance()Lcom/xcglobe/xclog/TermoFlyLogger;
+    move-result-object v3
+    invoke-virtual {v3}, Lcom/xcglobe/xclog/TermoFlyLogger;->stopLogging()V
+    const/4 v3, 0x0
+    sput-boolean v3, Lm/a;->loggerRun:Z
+
     invoke-static {}, Lm/g;->b()V
 
     invoke-static {}, Lcom/xcglobe/xclog/TermoFlyService;->a()V

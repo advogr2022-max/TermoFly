@@ -1708,8 +1708,15 @@
     move-result-object v1
     invoke-virtual {v0, v1}, Lcom/xcglobe/xclog/TtsManager;->init(Landroid/content/Context;)V
 
-    # Temporarily disabled — LDPlayer verifier rejects m.a$a
-    # invoke-static {}, Lm/a;->bAccel()V
+    # Init TermoFlyLogger
+    invoke-static {}, Lcom/xcglobe/xclog/TermoFlyLogger;->getInstance()Lcom/xcglobe/xclog/TermoFlyLogger;
+    move-result-object v0
+    invoke-virtual {p0}, Lcom/xcglobe/xclog/App;->getApplicationContext()Landroid/content/Context;
+    move-result-object v1
+    invoke-virtual {v0, v1}, Lcom/xcglobe/xclog/TermoFlyLogger;->init(Landroid/content/Context;)V
+
+    # Register sensors for thermal detection
+    invoke-static {}, Lm/a;->bAccel()V
 
     # invoke-static {}, Lm/a;->startThermalOnly()V
 

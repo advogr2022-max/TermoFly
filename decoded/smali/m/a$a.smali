@@ -77,6 +77,14 @@
     move-result v5
     sget-wide v2, Lm/a;->a:J
     invoke-static {v5, v6, v2, v3}, Lm/g;->a(FFJ)V
+
+    # Log baro data to TermoFlyLogger: updateBaro(pressure, altitude, vario)
+    invoke-static {}, Lcom/xcglobe/xclog/TermoFlyLogger;->getInstance()Lcom/xcglobe/xclog/TermoFlyLogger;
+    move-result-object v8
+    const/4 v0, 0x0
+    aget v0, v1, v0
+    invoke-virtual {v8, v0, v5, v6}, Lcom/xcglobe/xclog/TermoFlyLogger;->updateBaro(FFF)V
+
     return-void
 .end method
 
@@ -101,6 +109,37 @@
     sput v2, Lm/a;->bq_hx1y:F
     sput v2, Lm/a;->bq_hx2y:F
     :qs_done
+
+    # LP coefficient init on first call
+    sget v7, Lm/a;->accelEventCount:I
+    const/4 v0, 0x1
+    if-eq v7, v0, :lp_init
+    goto :lp_done
+    :lp_init
+
+    const/high16 v0, 0x42480000    # 50.0 (fs)
+    invoke-static {v0}, Lcom/xcglobe/xclog/ButterworthLP;->getLpCoeffsFromPrefs(F)[F
+
+    move-result-object v0
+    const/4 v1, 0x0
+    aget v3, v0, v1
+    sput v3, Lm/a;->lpCutoff:F
+    const/4 v1, 0x1
+    aget v3, v0, v1
+    sput v3, Lm/a;->lpB0:F
+    const/4 v1, 0x2
+    aget v3, v0, v1
+    sput v3, Lm/a;->lpB1:F
+    const/4 v1, 0x3
+    aget v3, v0, v1
+    sput v3, Lm/a;->lpB2:F
+    const/4 v1, 0x4
+    aget v3, v0, v1
+    sput v3, Lm/a;->lpA1:F
+    const/4 v1, 0x5
+    aget v3, v0, v1
+    sput v3, Lm/a;->lpA2:F
+    :lp_done
 
     # ========= HP 0.25Hz X =========
     sget v3, Lm/a;->bq_hx1:F
@@ -140,24 +179,24 @@
     sput v10, Lm/a;->bq_hy1:F
     move v8, v10
 
-    # ========= LP 2.5Hz X =========
+    # ========= LP X (dynamic fc) =========
     sget v3, Lm/a;->bq_lx1:F
     sget v4, Lm/a;->bq_lx2:F
     sget v5, Lm/a;->bq_ly1:F
     sget v6, Lm/a;->bq_ly2:F
 
-    const v10, 0x3ca485df
+    sget v10, Lm/a;->lpB0:F
     mul-float v10, v10, v8
-    const v11, 0x3d2485df
+    sget v11, Lm/a;->lpB1:F
     mul-float v11, v11, v3
     add-float v10, v10, v11
-    const v11, 0x3ca485df
+    sget v11, Lm/a;->lpB2:F
     mul-float v11, v11, v4
     add-float v10, v10, v11
-    const v11, 0xbfc7cf71
+    sget v11, Lm/a;->lpA1:F
     mul-float v11, v11, v5
     sub-float v10, v10, v11
-    const v11, 0x3f242f9d
+    sget v11, Lm/a;->lpA2:F
     mul-float v11, v11, v6
     sub-float v10, v10, v11
 
@@ -216,24 +255,24 @@
     sput v10, Lm/a;->bq_hy1y:F
     move v9, v10
 
-    # ========= LP 2.5Hz Y =========
+    # ========= LP Y (dynamic fc) =========
     sget v3, Lm/a;->bq_lx1y:F
     sget v4, Lm/a;->bq_lx2y:F
     sget v5, Lm/a;->bq_ly1y:F
     sget v6, Lm/a;->bq_ly2y:F
 
-    const v10, 0x3ca485df
+    sget v10, Lm/a;->lpB0:F
     mul-float v10, v10, v9
-    const v11, 0x3d2485df
+    sget v11, Lm/a;->lpB1:F
     mul-float v11, v11, v3
     add-float v10, v10, v11
-    const v11, 0x3ca485df
+    sget v11, Lm/a;->lpB2:F
     mul-float v11, v11, v4
     add-float v10, v10, v11
-    const v11, 0xbfc7cf71
+    sget v11, Lm/a;->lpA1:F
     mul-float v11, v11, v5
     sub-float v10, v10, v11
-    const v11, 0x3f242f9d
+    sget v11, Lm/a;->lpA2:F
     mul-float v11, v11, v6
     sub-float v10, v10, v11
 
@@ -295,6 +334,52 @@
     invoke-direct {p0}, Lm/a$a;->updateFreq()V
     invoke-direct {p0, v12, v13}, Lm/a$a;->updateEnergy(FF)V
     invoke-direct {p0}, Lm/a$a;->updateStatus()V
+
+    # === Auto-manage logger - start once, keep running ===
+    sget-boolean v11, Lm/a;->loggerRun:Z
+    if-nez v11, :log_done
+    invoke-static {}, Lc/c;->a()Z
+    move-result v10
+    if-eqz v10, :log_done
+    # IGC recording started → save name + start logger
+    sget-object v0, Lc/c;->c:Lc/c;
+    if-nez v0, :log_save_name
+    iget-object v8, v0, Lc/c;->d:Ljava/lang/String;
+    if-nez v8, :log_save_name
+    sput-object v8, Lm/a;->lastIgcName:Ljava/lang/String;
+    goto :log_set_name
+    :log_save_name
+    sget-object v8, Lm/a;->lastIgcName:Ljava/lang/String;
+    :log_set_name
+    if-eqz v8, :log_start_nm
+    invoke-static {}, Lcom/xcglobe/xclog/TermoFlyLogger;->getInstance()Lcom/xcglobe/xclog/TermoFlyLogger;
+    move-result-object v0
+    invoke-virtual {v0, v8}, Lcom/xcglobe/xclog/TermoFlyLogger;->setBaseFileName(Ljava/lang/String;)V
+    :log_start_nm
+    invoke-static {}, Lcom/xcglobe/xclog/TermoFlyLogger;->getInstance()Lcom/xcglobe/xclog/TermoFlyLogger;
+    move-result-object v0
+    invoke-virtual {v0}, Lcom/xcglobe/xclog/TermoFlyLogger;->startLogging()V
+    const/4 v10, 0x1
+    sput-boolean v10, Lm/a;->loggerRun:Z
+    :log_done
+
+    # === TermoFlyLogger: record sensor+blip data every sample ===
+    invoke-static {}, Lcom/xcglobe/xclog/TermoFlyLogger;->getInstance()Lcom/xcglobe/xclog/TermoFlyLogger;
+    move-result-object v0
+
+    sget v1, Lm/a;->prevBpX:F
+    sget v2, Lm/a;->prevBpY:F
+    sget v3, Lm/a;->smoothEnergy:F
+    sget v4, Lm/a;->noiseFloor:F
+    sget v5, Lm/a;->snrFiltered:F
+    sget v6, Lm/a;->dominantFreq:F
+    sget v7, Lm/a;->detStatus:I
+    sget v8, Lcom/xcglobe/xclog/l;->blipAngle:F
+    sget v9, Lcom/xcglobe/xclog/l;->blipStrength:F
+    sget v10, Lcom/xcglobe/xclog/l;->blipDistance:F
+    sget v11, Lcom/xcglobe/xclog/l;->blipStatus:I
+
+    invoke-virtual/range {v0 .. v11}, Lcom/xcglobe/xclog/TermoFlyLogger;->recordBpSample(FFFFFFIFFFI)V
 
     return-void
 .end method
@@ -528,9 +613,9 @@
     mul-double v0, v0, v10
     double-to-float v6, v0
     const/high16 v8, 0x43b40000
-    const/high16 v9, 0x0
-    cmpg-float v9, v6, v9
-    if-ltz v9, :nn2
+    const/high16 v11, 0x0
+    cmpg-float v9, v6, v11
+    if-gez v9, :nn2
     add-float/2addr v6, v8
     :nn2
     cmpg-float v9, v6, v8
@@ -546,6 +631,13 @@
     sget v14, Lm/a;->lastAngle:F
     add-float v14, v14, v15
     sput v14, Lm/a;->lastAngle:F
+    # blipDemo bypass: skip confirmation chain when demo mode is on
+    sget-boolean v4, Lcom/xcglobe/xclog/l;->blipDemo:Z
+    if-eqz v4, :cont_chain
+    goto :ic1
+    :cont_chain
+    # reload v4 with confirmCount (was corrupted by blipDemo check)
+    sget v4, Lm/a;->confirmCount:I
     # confirmation chain continues below
     const/4 v3, 0x5
     if-le v4, v3, :ac1
@@ -647,7 +739,7 @@
     int-to-float v13, v4
     sget v9, Lm/a;->confirmSum2:F
     div-float v9, v9, v13
-    const v7, 0x3f99999a
+    const v7, 0x3f866666    # 1.05
     mul-float v7, v8, v7
     cmpg-float v10, v9, v7
     if-ltz v10, :cr1
@@ -661,32 +753,108 @@
     sput v4, Lm/a;->consecReject:I
     sput v4, Lm/a;->confirmCount:I
 
-    # Voice prompt with direction
+    # Voice prompt with clock direction
     sget-boolean v4, Lcom/xcglobe/xclog/l;->voiceEnabled:Z
     if-eqz v4, :voice_skip
-    const/high16 v4, 0x43340000
-    cmpg-float v4, v6, v4
-    if-ltz v4, :vr_back
-    const/high16 v4, 0x42b40000
-    cmpg-float v4, v6, v4
-    if-ltz v4, :vr_front
-    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u0441\u043f\u0440\u0430\u0432\u0430"
+    # 12 o'clock: angle < 15 OR angle >= 345
+    const/high16 v4, 0x41700000       # 15.0
+    cmpg-float v5, v6, v4
+    if-ltz v5, :h12
+    const v4, 0x43ac8000       # 345.0
+    cmpg-float v5, v6, v4
+    if-ltz v5, :chk_1
+    :h12
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u043d\u0430 12 \u0447\u0430\u0441\u043e\u0432"
     goto :voice_say
-    :vr_front
-    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u0432\u043f\u0435\u0440\u0435\u0434\u0438"
+    :chk_1
+    const/high16 v4, 0x42340000       # 45.0
+    cmpg-float v5, v6, v4
+    if-ltz v5, :h1
+    :chk_2
+    const/high16 v4, 0x42960000       # 75.0
+    cmpg-float v5, v6, v4
+    if-ltz v5, :h2
+    :chk_3
+    const/high16 v4, 0x42d20000       # 105.0
+    cmpg-float v5, v6, v4
+    if-ltz v5, :h3
+    :chk_4
+    const/high16 v4, 0x43070000       # 135.0
+    cmpg-float v5, v6, v4
+    if-ltz v5, :h4
+    :chk_5
+    const/high16 v4, 0x43250000       # 165.0
+    cmpg-float v5, v6, v4
+    if-ltz v5, :h5
+    :chk_6
+    const/high16 v4, 0x43430000       # 195.0
+    cmpg-float v5, v6, v4
+    if-ltz v5, :h6
+    :chk_7
+    const/high16 v4, 0x43610000       # 225.0
+    cmpg-float v5, v6, v4
+    if-ltz v5, :h7
+    :chk_8
+    const/high16 v4, 0x437f0000       # 255.0
+    cmpg-float v5, v6, v4
+    if-ltz v5, :h8
+    :chk_9
+    const v4, 0x438e8000       # 285.0
+    cmpg-float v5, v6, v4
+    if-ltz v5, :h9
+    :chk_10
+    const v4, 0x439d8000       # 315.0
+    cmpg-float v5, v6, v4
+    if-ltz v5, :h10
+    :chk_11
+    const v4, 0x43ac8000       # 345.0
+    cmpg-float v5, v6, v4
+    if-ltz v5, :h11
+    # fallback (shouldn't reach here)
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u043d\u0430 12 \u0447\u0430\u0441\u043e\u0432"
     goto :voice_say
-    :vr_back
-    const/high16 v4, 0x43870000
-    cmpg-float v4, v6, v4
-    if-ltz v4, :vr_left
-    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u0441\u0437\u0430\u0434\u0438"
+    :h1
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u043d\u0430 1 \u0447\u0430\u0441"
     goto :voice_say
-    :vr_left
-    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u0441\u043b\u0435\u0432\u0430"
+    :h2
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u043d\u0430 2 \u0447\u0430\u0441\u0430"
+    goto :voice_say
+    :h3
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u043d\u0430 3 \u0447\u0430\u0441\u0430"
+    goto :voice_say
+    :h4
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u043d\u0430 4 \u0447\u0430\u0441\u0430"
+    goto :voice_say
+    :h5
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u043d\u0430 5 \u0447\u0430\u0441\u043e\u0432"
+    goto :voice_say
+    :h6
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u043d\u0430 6 \u0447\u0430\u0441\u043e\u0432"
+    goto :voice_say
+    :h7
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u043d\u0430 7 \u0447\u0430\u0441\u043e\u0432"
+    goto :voice_say
+    :h8
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u043d\u0430 8 \u0447\u0430\u0441\u043e\u0432"
+    goto :voice_say
+    :h9
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u043d\u0430 9 \u0447\u0430\u0441\u043e\u0432"
+    goto :voice_say
+    :h10
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u043d\u0430 10 \u0447\u0430\u0441\u043e\u0432"
+    goto :voice_say
+    :h11
+    const-string v0, "\u0422\u0435\u0440\u043c\u0438\u043a \u043d\u0430 11 \u0447\u0430\u0441\u043e\u0432"
     :voice_say
     invoke-static {}, Lcom/xcglobe/xclog/TtsManager;->getInstance()Lcom/xcglobe/xclog/TtsManager;
     move-result-object v1
     invoke-virtual {v1, v0}, Lcom/xcglobe/xclog/TtsManager;->speak(Ljava/lang/String;)V
+
+    # Log voice phrase to CSV
+    invoke-static {}, Lcom/xcglobe/xclog/TermoFlyLogger;->getInstance()Lcom/xcglobe/xclog/TermoFlyLogger;
+    move-result-object v2
+    invoke-virtual {v2, v0}, Lcom/xcglobe/xclog/TermoFlyLogger;->setVoicePhrase(Ljava/lang/String;)V
+
     :voice_skip
 
     goto :dw1
@@ -818,10 +986,22 @@
     sput-wide v0, Lcom/xcglobe/xclog/l;->blipLifeMs:J
     goto :ld1
     :kill_blip
+    # Demo mode: skip decay kill
+    sget-boolean v11, Lcom/xcglobe/xclog/l;->blipDemo:Z
+    if-nez v11, :real_kill
+    goto :after_amp
+    :real_kill
     const/high16 v8, -0x40800000
     sput v8, Lcom/xcglobe/xclog/l;->blipAngle:F
     return-void
     :ld1
+    # Clamp blipLifeMs to minimum 3000ms
+    sget-wide v0, Lcom/xcglobe/xclog/l;->blipLifeMs:J
+    const-wide/16 v2, 0xbb8    # 3000ms
+    cmp-long v4, v0, v2
+    if-gez v4, :life_ok
+    sput-wide v2, Lcom/xcglobe/xclog/l;->blipLifeMs:J
+    :life_ok
     sput v6, Lcom/xcglobe/xclog/l;->blipAngle:F
     sget v4, Lm/a;->detStatus:I
     sput v4, Lcom/xcglobe/xclog/l;->blipStatus:I

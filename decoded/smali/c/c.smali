@@ -7,13 +7,13 @@
 
 .field private static b:Z = false
 
-.field private static c:Lc/c;
+.field public static c:Lc/c;
 
 .field private static q:[F
 
 
 # instance fields
-.field private d:Ljava/lang/String;
+.field public d:Ljava/lang/String;
 
 .field private e:F
 
@@ -196,9 +196,11 @@
     :cond_1
     const/4 v0, 0x1
 
-    sput-boolean v0, Lc/c;->b:Z
-
     iput-object p1, p0, Lc/c;->o:Ljava/lang/String;
+
+    iput-object p1, p0, Lc/c;->d:Ljava/lang/String;
+
+    sput-object p1, Lm/a;->lastIgcName:Ljava/lang/String;
 
     iput-boolean p2, p0, Lc/c;->n:Z
 
@@ -252,7 +254,9 @@
 
     move-result-object p1
 
-    iput-object p1, p0, Lc/c;->d:Ljava/lang/String;
+    sput-object p0, Lc/c;->c:Lc/c;
+
+    sput-boolean v0, Lc/c;->b:Z
 
     :cond_2
     new-instance p1, Li/a/c;
@@ -275,8 +279,6 @@
     iget-object p1, p0, Lc/c;->t:Li/a/c;
 
     iput-boolean v0, p1, Li/a/c;->c:Z
-
-    sput-object p0, Lc/c;->c:Lc/c;
 
     sget p1, Lc/a;->a:I
 

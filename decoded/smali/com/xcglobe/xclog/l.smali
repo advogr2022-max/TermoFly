@@ -185,7 +185,7 @@
 .field public static blipBornAmp:F = 0f
 .field public static blipEnabled:Z = true
 .field public static blipDebug:Z = true
-.field public static voiceEnabled:Z = false
+.field public static voiceEnabled:Z = true
 
 .field public static blipDemo:Z = false
 
@@ -281,7 +281,7 @@
 
     sput-boolean v0, Lcom/xcglobe/xclog/l;->Q:Z
 
-    sput-boolean v3, Lcom/xcglobe/xclog/l;->R:Z
+    sput-boolean v0, Lcom/xcglobe/xclog/l;->R:Z    # false → faster vario (0.5s window)
 
     sput v0, Lcom/xcglobe/xclog/l;->S:I
 
@@ -3018,13 +3018,18 @@
     :try_end_4
     .catchall {:try_start_4 .. :try_end_4} :catchall_0
 
+    if-eqz p0, :close_p0_1
     invoke-virtual {p0}, Ljava/nio/channels/FileChannel;->close()V
-
+    :close_p0_1
+    if-eqz v8, :close_v8_1
     invoke-virtual {v8}, Ljava/nio/channels/FileChannel;->close()V
-
+    :close_v8_1
+    if-eqz v1, :close_fis_1
     invoke-virtual {v1}, Ljava/io/FileInputStream;->close()V
-
+    :close_fis_1
+    if-eqz v0, :close_fos_1
     invoke-virtual {v0}, Ljava/io/FileOutputStream;->close()V
+    :close_fos_1
 
     return-void
 
@@ -3076,14 +3081,18 @@
     move-object v8, v1
 
     :goto_0
+    if-eqz p1, :close_p1_catch
     invoke-virtual {p1}, Ljava/nio/channels/FileChannel;->close()V
-
+    :close_p1_catch
+    if-eqz v8, :close_v8_catch
     invoke-virtual {v8}, Ljava/nio/channels/FileChannel;->close()V
-
+    :close_v8_catch
+    if-eqz v1, :close_fis_catch
     invoke-virtual {v1}, Ljava/io/FileInputStream;->close()V
-
+    :close_fis_catch
+    if-eqz v0, :close_fos_catch
     invoke-virtual {v0}, Ljava/io/FileOutputStream;->close()V
-
+    :close_fos_catch
     throw p0
 .end method
 
