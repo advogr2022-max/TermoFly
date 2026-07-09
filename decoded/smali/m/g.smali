@@ -866,6 +866,19 @@
 
     invoke-virtual {v0, v10}, Ltypes/g;->a(Ltypes/GpsVal;)V
 
+    # Update TermoFlyLogger with GPS position (convert float lat/lon to E7)
+    move/from16 v0, p0
+    const v1, 0x4b189680    # 10000000.0f
+    mul-float v0, v0, v1
+    float-to-int v0, v0
+    move/from16 v2, p1
+    const v1, 0x4b189680    # 10000000.0f
+    mul-float v2, v2, v1
+    float-to-int v2, v2
+    invoke-static {}, Lcom/xcglobe/xclog/TermoFlyLogger;->getInstance()Lcom/xcglobe/xclog/TermoFlyLogger;
+    move-result-object v1
+    invoke-virtual {v1, v0, v2}, Lcom/xcglobe/xclog/TermoFlyLogger;->updatePosition(II)V
+
     :cond_11
     sget-boolean v0, Lcom/xcglobe/xclog/l;->ao:Z
 
@@ -1210,10 +1223,11 @@
 
     invoke-static {p0}, Lcom/xcglobe/xclog/ActivityMain;->a(I)V
 
-    # Stop sensor logger + allow restart on next recording
+    # Stop sensor logger when track recording truly ends
     invoke-static {}, Lcom/xcglobe/xclog/TermoFlyLogger;->getInstance()Lcom/xcglobe/xclog/TermoFlyLogger;
     move-result-object v3
     invoke-virtual {v3}, Lcom/xcglobe/xclog/TermoFlyLogger;->stopLogging()V
+    # Reset flag so logger can start fresh next recording
     const/4 v3, 0x0
     sput-boolean v3, Lm/a;->loggerRun:Z
 

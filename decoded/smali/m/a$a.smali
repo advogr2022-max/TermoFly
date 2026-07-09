@@ -335,34 +335,6 @@
     invoke-direct {p0, v12, v13}, Lm/a$a;->updateEnergy(FF)V
     invoke-direct {p0}, Lm/a$a;->updateStatus()V
 
-    # === Auto-manage logger - start once, keep running ===
-    sget-boolean v11, Lm/a;->loggerRun:Z
-    if-nez v11, :log_done
-    invoke-static {}, Lc/c;->a()Z
-    move-result v10
-    if-eqz v10, :log_done
-    # IGC recording started → save name + start logger
-    sget-object v0, Lc/c;->c:Lc/c;
-    if-nez v0, :log_save_name
-    iget-object v8, v0, Lc/c;->d:Ljava/lang/String;
-    if-nez v8, :log_save_name
-    sput-object v8, Lm/a;->lastIgcName:Ljava/lang/String;
-    goto :log_set_name
-    :log_save_name
-    sget-object v8, Lm/a;->lastIgcName:Ljava/lang/String;
-    :log_set_name
-    if-eqz v8, :log_start_nm
-    invoke-static {}, Lcom/xcglobe/xclog/TermoFlyLogger;->getInstance()Lcom/xcglobe/xclog/TermoFlyLogger;
-    move-result-object v0
-    invoke-virtual {v0, v8}, Lcom/xcglobe/xclog/TermoFlyLogger;->setBaseFileName(Ljava/lang/String;)V
-    :log_start_nm
-    invoke-static {}, Lcom/xcglobe/xclog/TermoFlyLogger;->getInstance()Lcom/xcglobe/xclog/TermoFlyLogger;
-    move-result-object v0
-    invoke-virtual {v0}, Lcom/xcglobe/xclog/TermoFlyLogger;->startLogging()V
-    const/4 v10, 0x1
-    sput-boolean v10, Lm/a;->loggerRun:Z
-    :log_done
-
     # === TermoFlyLogger: record sensor+blip data every sample ===
     invoke-static {}, Lcom/xcglobe/xclog/TermoFlyLogger;->getInstance()Lcom/xcglobe/xclog/TermoFlyLogger;
     move-result-object v0

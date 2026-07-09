@@ -26,7 +26,9 @@ import java.util.zip.ZipOutputStream;
 /**
  * TermoFlyLogger — companion sensor logger for IGC flights.
  * Logs raw sensor data (accel, gyro, mag) plus blip algorithm results.
- * Syncs with IGC via wallStartMs → utcMs in each row.
+ * Syncs with IGC via wallStartMs -> utcMs in each row.
+ * v0.0.60: elapsedMs rename, lat/lon columns, background sensor thread,
+ *          UTC-only filenames, synchronous start/stop with IGC.
  */
 public class TermoFlyLogger implements SensorEventListener {
 
@@ -50,15 +52,22 @@ public class TermoFlyLogger implements SensorEventListener {
 
     private HandlerThread ioThread;
     private Handler ioHandler;
+    /** Handler on ioThread looper for sensor delivery */
+    private Handler sensorHandler;
     private SensorManager sensorManager;
 
     private boolean hasFirstAccel;
+    private boolean hasFirstPosition;
 
     private float accelX, accelY, accelZ;
     private float gyroX, gyroY, gyroZ;
     private float magX, magY, magZ;
 
     private float cachedPressure, cachedAltitude, cachedVario;
+
+    /** Latest GPS lat/lon from smali updatePosition() — latDeg * 1e7 */
+    private int cachedLatE7 = Integer.MIN_VALUE;
+    private int cachedLonE7 = Integer.MIN_VALUE;
 
     // Voice prompt phrase (set from smali voice code, cleared after one CSV row)
     private volatile String currentVoicePhrase = "";
@@ -77,6 +86,7 @@ public class TermoFlyLogger implements SensorEventListener {
         ioThread = new HandlerThread("tf-log-io");
         ioThread.start();
         ioHandler = new Handler(ioThread.getLooper());
+        sensorHandler = new Handler(ioThread.getLooper());
     }
 
     public void init(Context context) {
@@ -102,10 +112,10 @@ public class TermoFlyLogger implements SensorEventListener {
                         continue;
                     }
                     File zipFile = new File(logDir, baseName + ".zip");
-                    java.util.zip.ZipOutputStream zos =
-                        new java.util.zip.ZipOutputStream(new FileOutputStream(zipFile));
+                    ZipOutputStream zos =
+                        new ZipOutputStream(new FileOutputStream(zipFile));
                     zos.setLevel(9);
-                    java.util.zip.ZipEntry entry = new java.util.zip.ZipEntry(baseName + ".csv");
+                    ZipEntry entry = new ZipEntry(baseName + ".csv");
                     entry.setSize(csvBytes.length);
                     zos.putNextEntry(entry);
                     zos.write(csvBytes);
@@ -135,6 +145,16 @@ public class TermoFlyLogger implements SensorEventListener {
         cachedVario = vario;
     }
 
+    /** Called from smali on every GPS fix (~1Hz). Stores lat/lon as E7. */
+    public void updatePosition(int latE7, int lonE7) {
+        cachedLatE7 = latE7;
+        cachedLonE7 = lonE7;
+        if (!hasFirstPosition) {
+            hasFirstPosition = true;
+            Log.i(TAG, "First position: " + (latE7 / 1e7) + ", " + (lonE7 / 1e7));
+        }
+    }
+
     public void recordBpSample(float bpX, float bpY,
                                float smoothEnergy, float noiseFloor, float snrFiltered,
                                float dominantFreq, int detStatus,
@@ -145,14 +165,23 @@ public class TermoFlyLogger implements SensorEventListener {
         if (sampleCounter % 2 != 0) return; // decimate to 25Hz
 
         long now = SystemClock.elapsedRealtime();
-        long dtMs = now - elapsedStartMs;
-        long utcMs = wallStartMs + dtMs;
+        long elapsedMs = now - elapsedStartMs;
+        long utcMs = wallStartMs + elapsedMs;
 
         synchronized (lock) {
             if (csvWriter == null) return;
             try {
-                csvWriter.write(String.valueOf(dtMs)); csvWriter.write(',');
+                csvWriter.write(String.valueOf(elapsedMs)); csvWriter.write(',');
                 csvWriter.write(String.valueOf(utcMs)); csvWriter.write(',');
+
+                // lat/lon as double degrees (only when valid)
+                if (cachedLatE7 != Integer.MIN_VALUE && cachedLonE7 != Integer.MIN_VALUE) {
+                    csvWriter.write(String.valueOf(cachedLatE7 / 1e7)); csvWriter.write(',');
+                    csvWriter.write(String.valueOf(cachedLonE7 / 1e7)); csvWriter.write(',');
+                } else {
+                    csvWriter.write(','); csvWriter.write(',');
+                }
+
                 csvWriter.write(String.valueOf(accelX)); csvWriter.write(',');
                 csvWriter.write(String.valueOf(accelY)); csvWriter.write(',');
                 csvWriter.write(String.valueOf(accelZ)); csvWriter.write(',');
@@ -193,8 +222,10 @@ public class TermoFlyLogger implements SensorEventListener {
             baseFileName = pendingBaseName;
             pendingBaseName = null;
         } else {
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US);
-            baseFileName = "tf_log_" + sdf.format(new Date());
+            // Fallback: use UTC time to match IGC naming
+            SimpleDateFormat sdf = new SimpleDateFormat("'tf_'yyyy-MM-dd-HH-mm", Locale.US);
+            sdf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+            baseFileName = sdf.format(new Date());
         }
 
         isLogging = true;
@@ -202,6 +233,9 @@ public class TermoFlyLogger implements SensorEventListener {
         wallStartMs = System.currentTimeMillis();
         sampleCounter = 0;
         hasFirstAccel = false;
+        hasFirstPosition = false;
+        cachedLatE7 = Integer.MIN_VALUE;
+        cachedLonE7 = Integer.MIN_VALUE;
 
         synchronized (lock) {
             try {
@@ -214,7 +248,9 @@ public class TermoFlyLogger implements SensorEventListener {
                     8192
                 );
 
-                csvWriter.write("dtMs,utcMs,accelX,accelY,accelZ,gyroX,gyroY,gyroZ,");
+                // Header: elapsedMs replaces dtMs; lat,lon added
+                csvWriter.write("elapsedMs,utcMs,lat,lon,");
+                csvWriter.write("accelX,accelY,accelZ,gyroX,gyroY,gyroZ,");
                 csvWriter.write("magX,magY,magZ,pressure,altitude,vario,");
                 csvWriter.write("bpX,bpY,smoothEnergy,noiseFloor,snr,");
                 csvWriter.write("dominantFreq,detStatus,");
@@ -231,6 +267,15 @@ public class TermoFlyLogger implements SensorEventListener {
         }
 
         registerSensors();
+    }
+
+    /**
+     * Called directly from c/c smali when IGC recording starts.
+     * Synchronous start — no polling delay.
+     */
+    public void startWithIgc(String igcFileName) {
+        setBaseFileName(igcFileName);
+        startLogging();
     }
 
     public void stopLogging() {
@@ -258,16 +303,19 @@ public class TermoFlyLogger implements SensorEventListener {
         if (sensorManager == null || sensorsRegistered) return;
 
         Sensor accel = sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        if (accel != null) sensorManager.registerListener(this, accel, 20000);
+        if (accel != null)
+            sensorManager.registerListener(this, accel, 20000, sensorHandler);
 
         Sensor gyro = sensorManager.getDefaultSensor(Sensor.TYPE_GYROSCOPE);
-        if (gyro != null) sensorManager.registerListener(this, gyro, 20000);
+        if (gyro != null)
+            sensorManager.registerListener(this, gyro, 20000, sensorHandler);
 
         Sensor mag = sensorManager.getDefaultSensor(Sensor.TYPE_MAGNETIC_FIELD);
-        if (mag != null) sensorManager.registerListener(this, mag, 40000);
+        if (mag != null)
+            sensorManager.registerListener(this, mag, 40000, sensorHandler);
 
         sensorsRegistered = true;
-        Log.i(TAG, "Sensors reg: accel=" + (accel != null)
+        Log.i(TAG, "Sensors reg (bg thread): accel=" + (accel != null)
             + " gyro=" + (gyro != null) + " mag=" + (mag != null));
     }
 
@@ -279,6 +327,7 @@ public class TermoFlyLogger implements SensorEventListener {
         }
     }
 
+    @Override
     public void onSensorChanged(SensorEvent event) {
         int type = event.sensor.getType();
         float[] v = event.values;
@@ -299,6 +348,7 @@ public class TermoFlyLogger implements SensorEventListener {
         }
     }
 
+    @Override
     public void onAccuracyChanged(Sensor sensor, int accuracy) {}
 
     private void zipAndClean() {
@@ -373,6 +423,7 @@ public class TermoFlyLogger implements SensorEventListener {
             }
             ioThread = null;
             ioHandler = null;
+            sensorHandler = null;
         }
     }
 

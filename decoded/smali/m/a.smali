@@ -486,10 +486,7 @@
 
     sput v0, Lm/a;->accelEventCount:I
 
-    # Stop sensor logging
-    invoke-static {}, Lcom/xcglobe/xclog/TermoFlyLogger;->getInstance()Lcom/xcglobe/xclog/TermoFlyLogger;
-    move-result-object v0
-    invoke-virtual {v0}, Lcom/xcglobe/xclog/TermoFlyLogger;->stopLogging()V
+    # Logger stop is handled by c/c synchronously with IGC stop
 
     return-void
 .end method

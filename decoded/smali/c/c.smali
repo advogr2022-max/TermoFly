@@ -258,6 +258,15 @@
 
     sput-boolean v0, Lc/c;->b:Z
 
+    # Start sensor logger synchronously with IGC recording
+    invoke-static {}, Lcom/xcglobe/xclog/TermoFlyLogger;->getInstance()Lcom/xcglobe/xclog/TermoFlyLogger;
+
+    move-result-object v1
+
+    iget-object v2, p0, Lc/c;->o:Ljava/lang/String;
+
+    invoke-virtual {v1, v2}, Lcom/xcglobe/xclog/TermoFlyLogger;->startWithIgc(Ljava/lang/String;)V
+
     :cond_2
     new-instance p1, Li/a/c;
 
@@ -998,6 +1007,8 @@
 
     invoke-direct {p0, v0}, Lc/c;->a(Z)V
 
+    # Stop sensor logger only when scoring really ends (b:Z cleared for real)
+    # Not here - scoring thread runs immediately and would kill logger prematurely
     const/4 v0, 0x0
 
     sput-boolean v0, Lc/c;->b:Z
