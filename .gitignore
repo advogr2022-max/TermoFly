@@ -30,3 +30,6 @@ install_sdk.bat
 plan.md
 test_*.txt
 test_*.igc
+
+# Secrets — DO NOT COMMIT
+.github_token.sh
